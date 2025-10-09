@@ -29,6 +29,9 @@ importers:
       bitcoinjs-lib:
         specifier: ^7.0.0
         version: 7.0.0(typescript@5.9.2)
+      bn.js:
+        specifier: ^5.2.2
+        version: 5.2.2
       ecpair:
         specifier: ^3.0.0
         version: 3.0.0(typescript@5.9.2)
