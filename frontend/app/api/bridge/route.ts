@@ -3,7 +3,6 @@ import * as bitcoin from "bitcoinjs-lib";
 import ECPairFactory from "ecpair";
 import * as tinysecp from "tiny-secp256k1";
 import { buildDepositTransaction, type UTXO } from "@zeus-network/zeus-stack-sdk/bitcoin";
-import BN from "bn.js";
 
 const ECPair = ECPairFactory(tinysecp);
 
@@ -55,6 +54,8 @@ export async function POST(req: Request) {
       block_height: Number(u.block_height ?? 0),
     }));
 
+    console.log("UTXO : ", utxos);
+
     const keyPair = ECPair.fromWIF(WALLET_PRIVATE_KEY_WIF, BTC_NETWORK);
     const xOnly = keyPair.publicKey.slice(1, 33);
 
@@ -73,7 +74,13 @@ export async function POST(req: Request) {
 
     console.log("PSBT Tx : ", psbt);
 
-    psbt.signAllInputs(keyPair);
+    // psbt.signAllInputs(keyPair as unknown as any);
+
+    psbt.data.inputs.forEach((input, idx) => {
+      // Only sign if key controls the UTXO
+      psbt.signInput(idx, keyPair as unknown as any);
+    });
+
     psbt.finalizeAllInputs();
     const signedTxHex = psbt.extractTransaction().toHex();
 
