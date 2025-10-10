@@ -118,8 +118,8 @@ const BTC_RESERVE_ADDRESS = process.env.BTC_RESERVE_ADDRESS!;
 const BTC_PRIVATE_KEY_HEX = process.env.BTC_PRIVATE_KEY_HEX!;
 const NETWORK = process.env.BITCOIN_NETWORK || "regtest";
 
-const FEE_RATE = 2; 
-const AMOUNT = 0.01 * 1e8; 
+const FEE_RATE = 2;
+const AMOUNT = 0.01 * 1e8;
 
 const bitcoinApiGateway = {
   regtest: "https://bitcoin-api-gateway-regtest-devnet.zeuslayer.space",
@@ -129,9 +129,14 @@ const bitcoinApiGateway = {
 async function fetchUtxos(address: string): Promise<UTXO[]> {
   const base = bitcoinApiGateway[NETWORK as keyof typeof bitcoinApiGateway];
   const url = `${base}/api/v1/address/${address}/utxos`;
+
+  console.log("UTXO URL" , url);
+
   const res = await fetch(url);
   if (!res.ok) throw new Error(`UTXO fetch failed ${res.status} ${res.statusText}`);
   const data = (await res.json()).data;
+
+  console.log("UTXO Data : " , data);
 
   return data.map((u: any) => ({
     transaction_id: u.transaction_id ?? u.txid,
@@ -154,22 +159,29 @@ async function broadcastTransaction(transactionHex: string): Promise<string> {
 }
 
 // -------- keypair + address ----------
-function createKeypairAndAddress(privHex: string, network: bitcoin.Network) {
+function createKeypairAndAddress(privWIF: string, network: bitcoin.Network) {
+  console.log("Private key WIF:", privWIF);
 
-  console.log("Private key HEX" , privHex);
+  // Create keypair from WIF
+  const keypair = ECPair.fromWIF(privWIF, network);
 
-  const keypair = ECPair.fromPrivateKey(Buffer.from(privHex, "hex"));
+
+  // Taproot uses x-only pubkey (first 32 bytes of compressed pubkey)
   const xOnlyPubkey = Buffer.from(toXOnly(keypair.publicKey));
-  const p2trPayment = bitcoin.payments.p2tr({ internalPubkey: xOnlyPubkey, network });
-  if (!p2trPayment.address) throw new Error("Failed to generate p2tr address");
 
-  const tweakedKeypair = keypair.tweak(
-    bitcoin.crypto.taggedHash("TapTweak", xOnlyPubkey)
-  );
+  // Generate P2TR address
+  const p2trPayment = bitcoin.payments.p2tr({
+    internalPubkey: xOnlyPubkey,
+    network,
+  });
+  if (!p2trPayment.address) throw new Error("Failed to generate P2TR address");
+
+  // Tweak the keypair (used for signing Taproot transactions)
+  const tweakedKeypair = keypair.tweak(bitcoin.crypto.taggedHash("TapTweak", xOnlyPubkey));
 
   return {
-    keypair,
-    tweakedKeypair,
+    keypair,          // original keypair
+    tweakedKeypair,   // tweaked keypair for signing
     address: p2trPayment.address,
     xOnlyPubkey,
   };
