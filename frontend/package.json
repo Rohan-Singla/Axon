@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@bitcoinerlab/secp256k1": "^1.2.0",
     "@solana/wallet-adapter-base": "^0.9.27",
     "@solana/wallet-adapter-react": "^0.15.39",
     "@solana/wallet-adapter-react-ui": "^0.9.39",
@@ -22,6 +23,9 @@
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "tiny-secp256k1": "^2.2.4"
+  },
+  "resolutions": {
+    "bitcoinjs-lib": "7.0.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
