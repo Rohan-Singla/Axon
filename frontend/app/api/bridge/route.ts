@@ -256,7 +256,6 @@
 
 
 import { NextResponse } from "next/server";
-import type { UTXO } from "@zeus-network/zeus-stack-sdk/bitcoin";
 import * as bitcoin from "bitcoinjs-lib";
 import ecc from "@bitcoinerlab/secp256k1";
 import ECPairFactory from "ecpair";
@@ -268,108 +267,52 @@ const Edra = process.env.BTC_RESERVE_ADDRESS!;
 const BITCOIN_WIF_PRIVATE_KEY = process.env.BTC_PRIVATE_KEY_HEX!;
 const network = process.env.BTC_NETWORK || "regtest";
 
-const amount = 0.01 * 1e8; // sat (number)
-const feeRate = 2; // sat/vB
+const amount = 0.01 * 1e8; 
+const feeRate = 2; 
 
-const bitcoinApiGateWay = {
-  regtest: "http://127.0.0.1:18443",
-  mainnet: "https://bitcoin-api-gateway.zeuslayer.io",
-};
+const NETWORK = network === "regtest" ? bitcoin.networks.regtest : bitcoin.networks.bitcoin;
 
-type AddressUTXOApi =
-  | { txid: string; vout: number; value: number; height?: number }
-  | {
-    transaction_id: string;
-    transaction_index: number;
-    satoshis: number;
-    block_height?: number;
-  };
+const RPC_USER = process.env.BTC_RPC_USER || "rpcuser";
+const RPC_PASSWORD = process.env.BTC_RPC_PASSWORD || "rpcpassword";
+const RPC_PORT = process.env.BTC_RPC_PORT || "18443";
 
-// async function fetchUtxos(address: string): Promise<UTXO[]> {
-//   const base = bitcoinApiGateWay[network as keyof typeof bitcoinApiGateWay];
-//   const url = `${base}/api/v1/address/${address}/utxos`;
-//   const res = await fetch(url);
-//   if (!res.ok)
-//     throw new Error(`UTXO fetch failed ${res.status} ${res.statusText}`);
-//   const data = (await res.json()).data as AddressUTXOApi[];
-//   return data.map((u) =>
-//     "transaction_id" in u
-//       ? {
-//         transaction_id: u.transaction_id,
-//         transaction_index: u.transaction_index,
-//         satoshis: u.satoshis,
-//         block_height: u.block_height ?? 0,
-//       }
-//       : {
-//         transaction_id: u.txid,
-//         transaction_index: u.vout,
-//         satoshis: u.value,
-//         block_height: u.height ?? 0,
-//       }
-//   );
-// }
-
-async function fetchUtxos(address: string) {
-  const rpcUser = "rpcuser";
-  const rpcPassword = "rpcpassword";
-
-  const res = await fetch("http://127.0.0.1:18443/", {
+async function callBitcoinRpc(method: string, params: any[] = []) {
+  const res = await fetch(`http://127.0.0.1:${RPC_PORT}/`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: "Basic " + Buffer.from(`${rpcUser}:${rpcPassword}`).toString("base64"),
+      Authorization: "Basic " + Buffer.from(`${RPC_USER}:${RPC_PASSWORD}`).toString("base64"),
     },
     body: JSON.stringify({
       jsonrpc: "1.0",
-      id: "fetchutxos",
-      method: "listunspent",
-      params: [0, 9999999, [address]],
+      id: "curltest",
+      method,
+      params,
     }),
   });
 
   const data = await res.json();
-  if (!data.result) throw new Error(`Failed to fetch UTXOs: ${JSON.stringify(data.error)}`);
+  if (data.error) throw new Error(JSON.stringify(data.error));
+  return data.result;
+}
 
-  return data.result.map((u: any) => ({
+async function fetchUtxos(address: string) {
+  const utxos = await callBitcoinRpc("listunspent", [0, 9999999, [address]]);
+  return utxos.map((u: any) => ({
     transaction_id: u.txid,
     transaction_index: u.vout,
     satoshis: Math.round(u.amount * 1e8),
   }));
 }
 
-
-async function fetchTransaction(txid: string): Promise<string> {
-  const base = bitcoinApiGateWay[network as keyof typeof bitcoinApiGateWay];
-  const url = `${base}/api/v1/transaction/${txid}/detail`;
-  const res = await fetch(url);
-  if (!res.ok)
-    throw new Error(
-      `Transaction fetch failed ${res.status} ${res.statusText}`
-    );
-  const data = await res.json();
-  const hex = data.data?.transaction;
-  if (!hex || typeof hex !== "string") {
-    throw new Error(`Invalid transaction hex for ${txid}`);
-  }
-  return hex;
+async function fetchTransaction(txid: string) {
+  const tx = await callBitcoinRpc("gettransaction", [txid]);
+  if (!tx.hex) throw new Error(`Transaction has no hex: ${txid}`);
+  return tx.hex;
 }
 
-async function broadcastTransaction(transactionHex: string): Promise<string> {
-  const base = bitcoinApiGateWay[network as keyof typeof bitcoinApiGateWay];
-  const url = `${base}/api/v1/transaction/broadcast`;
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(transactionHex),
-  });
-  if (!res.ok)
-    throw new Error(`Broadcast failed ${res.status} ${res.statusText}`);
-  return (await res.json()).data;
-}
-
-function createKeypairAndAddressP2WPKH(wif: string, network: bitcoin.Network) {
-  const keypair = ECPair.fromWIF(wif, network);
-
+function createKeypairAndAddressP2WPKH(wif: string) {
+  const keypair = ECPair.fromWIF(wif, NETWORK);
   const wrappedKeypair = {
     ...keypair,
     publicKey: Buffer.from(keypair.publicKey),
@@ -378,54 +321,29 @@ function createKeypairAndAddressP2WPKH(wif: string, network: bitcoin.Network) {
 
   const p2wpkhPayment = bitcoin.payments.p2wpkh({
     pubkey: wrappedKeypair.publicKey,
-    network,
+    network: NETWORK,
   });
 
   if (!p2wpkhPayment.address)
     throw new Error("Failed to generate P2WPKH address");
 
-  return {
-    keypair: wrappedKeypair,
-    address: p2wpkhPayment.address,
-  };
+  return { keypair: wrappedKeypair, address: p2wpkhPayment.address };
 }
-
 
 export async function GET() {
   try {
-    const net =
-      network === "regtest"
-        ? bitcoin.networks.regtest
-        : bitcoin.networks.bitcoin;
-
-    const { keypair, address } = createKeypairAndAddressP2WPKH(
-      BITCOIN_WIF_PRIVATE_KEY,
-      net
-    );
-
-    console.log("regtest address : ", address);
+    const { keypair, address } = createKeypairAndAddressP2WPKH(BITCOIN_WIF_PRIVATE_KEY);
 
     const utxos = await fetchUtxos(address);
-    if (utxos.length === 0)
-      throw new Error(`No UTXOs found for address ${address}`);
+    if (utxos.length === 0) throw new Error(`No UTXOs found for address ${address}`);
 
-    // Sum UTXOs
-    const totalInputValue = utxos.reduce(
-      (sum, utxo) => sum + utxo.satoshis,
-      0
-    );
-
-    // Estimate fee
+    const totalInputValue = utxos.reduce((sum, u) => sum + u.satoshis, 0);
     const estimatedSize = utxos.length * 148 + 43 + 34 + 10;
     const estimatedFee = estimatedSize * feeRate;
-
-    // Change calculation
     const changeAmount = totalInputValue - amount - estimatedFee;
     if (changeAmount < 0) throw new Error("Insufficient funds");
 
-    // Build PSBT
-    const psbt = new bitcoin.Psbt({ network: net });
-
+    const psbt = new bitcoin.Psbt({ network: NETWORK });
     for (const utxo of utxos) {
       const prevTxHex = await fetchTransaction(utxo.transaction_id);
       psbt.addInput({
@@ -435,50 +353,28 @@ export async function GET() {
       });
     }
 
-    // Output to Edra
-    psbt.addOutput({
-      address: Edra,
-      value: amount,
-    });
+    const amountBigInt = BigInt(Math.round(amount));
+    const changeAmountBigInt = BigInt(Math.round(changeAmount));
 
-    // Change output if not dust
-    if (changeAmount > 546) {
-      psbt.addOutput({
-        address,
-        value: changeAmount,
-      });
-    }
+    psbt.addOutput({ address: Edra, value: amountBigInt });
+    if (changeAmount > 546) psbt.addOutput({ address, value: changeAmountBigInt });
 
-    // Sign and finalize
-    for (let i = 0; i < utxos.length; i++) {
-      psbt.signInput(i, keypair);
-    }
-
+    utxos.forEach((_ : any, i : any) => psbt.signInput(i, keypair));
     psbt.finalizeAllInputs();
+
     const tx = psbt.extractTransaction();
-    const txId = tx.getId();
-
-    const broadcastResult = await broadcastTransaction(tx.toHex());
-
-    const explorer =
-      network === "regtest"
-        ? `https://bitcoin-regtest-devnet.zeusscan.space/tx/${txId}`
-        : `https://mempool.space/tx/${txId}`;
+    const txHex = tx.toHex();
+    const txId = await callBitcoinRpc("sendrawtransaction", [txHex]);
 
     return NextResponse.json({
       success: true,
       txId,
-      explorer,
-      broadcastResult,
       changeAmount,
       fee: estimatedFee,
       address,
     });
   } catch (err: any) {
     console.error(err);
-    return NextResponse.json(
-      { success: false, error: err.message || "Unknown error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: err.message || "Unknown error" }, { status: 500 });
   }
 }
