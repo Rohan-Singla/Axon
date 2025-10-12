@@ -1,6 +1,6 @@
 # Local Mining Device Downstream Connection
 downstream_address = "0.0.0.0"
-downstream_port = 3001
+downstream_port = 34255
 
 # Version support
 max_supported_version = 2
