@@ -8,50 +8,63 @@ const ECPair = ECPairFactory(ecc);
 
 const Edra = process.env.BTC_RESERVE_ADDRESS!;
 const BITCOIN_WIF_PRIVATE_KEY = process.env.BTC_PRIVATE_KEY_HEX!;
-const network = process.env.BITCOIN_NETWORK || "";
+const network = process.env.BITCOIN_NETWORK!;
 
-const amount = 0.01 * 1e8;
+const bitcoinApiGateWay = {
+  regtest: "https://bitcoin-api-gateway-regtest-devnet.zeuslayer.space",
+  mainnet: "https://bitcoin-api-gateway.zeuslayer.io",
+};
+
 const feeRate = 2;
-
 const NETWORK = network === "regtest" ? bitcoin.networks.regtest : bitcoin.networks.bitcoin;
 
-const RPC_USER = process.env.REGTEST_RPC_USER || "rpcuser";
-const RPC_PASSWORD = process.env.REGTEST_RPC_PASSWORD || "rpcpassword";
-const RPC_PORT = process.env.REGTEST_RPC_PORT || "18443";
+type UTXO = {
+  transaction_id: string;
+  transaction_index: number;
+  satoshis: number;
+  block_height?: number;
+};
 
-async function callBitcoinRpc(method: string, params: any[] = []) {
-  const res = await fetch(`http://127.0.0.1:${RPC_PORT}/`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: "Basic " + Buffer.from(`${RPC_USER}:${RPC_PASSWORD}`).toString("base64"),
-    },
-    body: JSON.stringify({
-      jsonrpc: "1.0",
-      id: "curltest",
-      method,
-      params,
-    }),
-  });
-
-  const data = await res.json();
-  if (data.error) throw new Error(JSON.stringify(data.error));
-  return data.result;
-}
-
-async function fetchUtxos(address: string) {
-  const utxos = await callBitcoinRpc("listunspent", [0, 9999999, [address]]);
-  return utxos.map((u: any) => ({
-    transaction_id: u.txid,
-    transaction_index: u.vout,
-    satoshis: Math.round(u.amount * 1e8),
+async function fetchUtxos(address: string): Promise<UTXO[]> {
+  const base = bitcoinApiGateWay[network as keyof typeof bitcoinApiGateWay];
+  const url = `${base}/api/v1/address/${address}/utxos`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`UTXO fetch failed ${res.status} ${res.statusText}`);
+  const data = (await res.json()).data;
+  return data.map((u: any) => ({
+    transaction_id: u.txid || u.transaction_id,
+    transaction_index: u.vout ?? u.transaction_index,
+    satoshis: u.value ?? u.satoshis,
+    block_height: u.height ?? u.block_height ?? 0,
   }));
 }
 
-async function fetchTransaction(txid: string) {
-  const tx = await callBitcoinRpc("gettransaction", [txid]);
-  if (!tx.hex) throw new Error(`Transaction has no hex: ${txid}`);
-  return tx.hex;
+async function fetchTransaction(txid: string): Promise<string> {
+  const base = bitcoinApiGateWay[network as keyof typeof bitcoinApiGateWay];
+  const url = `${base}/api/v1/transaction/${txid}/detail`;
+  const res = await fetch(url);
+  if (!res.ok)
+    throw new Error(`Transaction fetch failed ${res.status} ${res.statusText}`);
+  const data = await res.json();
+  const hex = data.data?.transaction;
+  if (!hex || typeof hex !== "string") {
+    throw new Error(`Invalid transaction hex for ${txid}`);
+  }
+  return hex;
+}
+
+async function broadcastTransaction(txHex: string): Promise<string> {
+  const base = bitcoinApiGateWay[network as keyof typeof bitcoinApiGateWay];
+  const url = `${base}/api/v1/transaction/broadcast`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(txHex),
+  });
+  if (!res.ok)
+    throw new Error(`Broadcast failed ${res.status} ${res.statusText}`);
+  const data = await res.json();
+  return data.data;
 }
 
 function createKeypairAndAddressP2WPKH(wif: string) {
@@ -73,14 +86,30 @@ function createKeypairAndAddressP2WPKH(wif: string) {
   return { keypair: wrappedKeypair, address: p2wpkhPayment.address };
 }
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
-    const { keypair, address } = createKeypairAndAddressP2WPKH(BITCOIN_WIF_PRIVATE_KEY);
+    const { searchParams } = new URL(req.url);
+    const amountParam = searchParams.get("amount");
+
+    if (!amountParam) {
+      throw new Error("Missing 'amount' query parameter");
+    }
+
+    const amount = parseFloat(amountParam) * 1e8;
+    if (isNaN(amount) || amount <= 0) {
+      throw new Error("Invalid amount value");
+    }
+
+    const { keypair, address } = createKeypairAndAddressP2WPKH(
+      BITCOIN_WIF_PRIVATE_KEY
+    );
+
 
     const utxos = await fetchUtxos(address);
-    if (utxos.length === 0) throw new Error(`No UTXOs found for address ${address}`);
+    if (utxos.length === 0)
+      throw new Error(`No UTXOs found for address ${address}`);
 
-    const totalInputValue = utxos.reduce((sum, u) => sum + u.satoshis, 0);
+    const totalInputValue = utxos.reduce((sum: number, u: any) => sum + u.satoshis, 0);
     const estimatedSize = utxos.length * 148 + 43 + 34 + 10;
     const estimatedFee = estimatedSize * feeRate;
     const changeAmount = totalInputValue - amount - estimatedFee;
@@ -102,22 +131,32 @@ export async function GET() {
     psbt.addOutput({ address: Edra, value: amountBigInt });
     if (changeAmount > 546) psbt.addOutput({ address, value: changeAmountBigInt });
 
-    utxos.forEach((_: any, i: any) => psbt.signInput(i, keypair));
+    utxos.forEach((_: any, i: number) => psbt.signInput(i, keypair));
     psbt.finalizeAllInputs();
 
     const tx = psbt.extractTransaction();
     const txHex = tx.toHex();
-    const txId = await callBitcoinRpc("sendrawtransaction", [txHex]);
+
+    const txId = await broadcastTransaction(txHex);
+
+    const zeusScanUrl = `https://www.zeusscan.io/search/${txId}?network=regtest-devnet`;
+    const bitcoinExplorer = `https://bitcoin-regtest-devnet.zeusscan.space/tx/${txId}`;
 
     return NextResponse.json({
       success: true,
       txId,
-      changeAmount,
-      fee: estimatedFee,
       address,
+      amountSent: amount / 1e8,
+      changeAmount: changeAmount / 1e8,
+      fee: estimatedFee / 1e8,
+      zeusScanUrl,
+      bitcoinExplorer,
     });
   } catch (err: any) {
     console.error(err);
-    return NextResponse.json({ success: false, error: err.message || "Unknown error" }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: err.message || "Unknown error" },
+      { status: 500 }
+    );
   }
 }
