@@ -1,0 +1,46 @@
+
+# Node dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+
+# TypeScript build info (used by tsc -b incremental builds)
+tsconfig.tsbuildinfo
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment variables
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# IDE/editor files
+.vscode/
+.idea/
+*.swp
+
+# Temporary files
+*.tmp
+*.temp
+
+# Coverage reports (if using Jest or similar)
+coverage/
+
+# Optional: lock files (only if your team standardizes on one)
+# yarn.lock
+# package-lock.json
+# pnpm-lock.yaml
+
