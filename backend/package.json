@@ -19,6 +19,7 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "@clickhouse/client": "^1.12.1",
     "dotenv": "^17.2.3"
   }
 }
