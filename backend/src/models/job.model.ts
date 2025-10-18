@@ -9,10 +9,6 @@ export interface Job {
 
 export class JobModel {
   static async insert(job: Job) {
-    const query = `
-      INSERT INTO jobs (job_id, template_id, difficulty, created_at)
-      VALUES {job_id: String, template_id: String, difficulty: String, created_at: DateTime}
-    `;
 
     await client.insert({
       table: 'jobs',

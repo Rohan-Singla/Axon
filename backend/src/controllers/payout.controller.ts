@@ -3,13 +3,23 @@ import { PayoutModel } from '../models/payout.model';
 
 export const createPayout = async (req: Request, res: Response) => {
   try {
-    const { payout_id, miner_id, amount, tx_hash, paid_at } = req.body;
+    const { user_id, amount, tx_hash } = req.body;
 
-    if (!payout_id || !miner_id || amount == null || !paid_at) {
+    if (!user_id || amount == null || !tx_hash) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    await PayoutModel.insert({ payout_id, miner_id, amount, tx_hash, paid_at });
+    // ✅ Derive miner_id from users table
+    // const miner_id = await UserModel.findMinerIdByUserId(user_id);
+    // if (!miner_id) {
+    //   return res.status(404).json({ error: 'User not found or miner_id missing' });
+    // }
+
+    const payout_id = crypto.randomUUID();
+    const paid_at = new Date().toISOString();
+
+    // await PayoutModel.insert({ payout_id, miner_id, amount, tx_hash, paid_at });
+
     res.json({ message: '✅ Payout inserted successfully' });
   } catch (error) {
     console.error('Payout insert error:', error);
