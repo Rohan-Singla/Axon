@@ -10,10 +10,10 @@ export const client = createClient({
   database: process.env.CLICKHOUSE_DATABASE || "",
 })
 
-void (async () => {
-  const rows = await client.query({
-    query: 'SELECT 1',
-    format: 'JSONEachRow',
-  })
-  console.log('Result: ', await rows.json())
-})()
+// void (async () => {
+//   const rows = await client.query({
+//     query: 'SELECT 1',
+//     format: 'JSONEachRow',
+//   })
+//   console.log('Result: ', await rows.json())
+// })()
