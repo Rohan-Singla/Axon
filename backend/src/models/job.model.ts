@@ -1,5 +1,4 @@
 import { client } from "../db/config";
-
 export interface Job {
   job_id: string;
   template_id: string;
@@ -9,22 +8,21 @@ export interface Job {
 
 export class JobModel {
   static async insert(job: Job) {
-
     await client.insert({
-      table: 'jobs',
+      table: "jobs",
       values: [job],
-      format: 'JSONEachRow',
+      format: "JSONEachRow",
     });
   }
 
   static async findById(job_id: string): Promise<Job | null> {
     const resultSet = await client.query({
-      query: 'SELECT * FROM jobs WHERE job_id = {job_id:String} LIMIT 1',
+      query: "SELECT * FROM jobs WHERE job_id = s{job_id:String} LIMIT 1",
       query_params: { job_id },
-      format: 'JSONEachRow',
+      format: "JSONEachRow",
     });
 
     const rows = await resultSet.json<Job>();
-    return rows.length ? rows[0] as Job : null;
+    return rows.length ? (rows[0] as Job) : null;
   }
 }
