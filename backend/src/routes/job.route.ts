@@ -1,9 +1,9 @@
 import express, { Router } from 'express';
-import { createJob, getJobById } from '../controllers/job.controller';
+import { createJobs, getJobById } from '../controllers/job.controller';
 
 const router : Router = express.Router();
 
-router.post('/createjob', createJob);
+router.post('/createjob', createJobs);
 
 router.get('/:id', getJobById);
 

@@ -24,19 +24,38 @@ export const getShareById = async (req: Request, res: Response) => {
   }
 };
 
-export const createShare = async (req: Request, res: Response) => {
+export const createShares = async (req: Request, res: Response) => {
   try {
-    const share: Share = req.body;
+    const sharesInput = req.body;
 
-    if (!share.share_id || !share.miner_id || !share.job_id) {
-      return res.status(400).json({ error: 'Missing required fields' });
+    if (!Array.isArray(sharesInput) || sharesInput.length === 0) {
+      return res.status(400).json({ error: 'Shares must be a non-empty array' });
     }
 
-    await ShareModel.insertShare(share);
+    const shares: Share[] = sharesInput.map((share) => {
+      if (!share.miner_id || !share.job_id || !share.difficulty) {
+        throw new Error('Missing required fields in one of the shares');
+      }
+      return {
+        share_id: crypto.randomUUID(),
+        miner_id: share.miner_id,
+        job_id: share.job_id,
+        difficulty: share.difficulty,
+        created_at: new Date().toISOString(),
+        valid: share.valid, 
+      };
+    });
 
-    res.status(201).json({ message: 'Share inserted successfully' });
+    for (const share of shares) {
+      await ShareModel.insertShare(share);
+    }
+
+    res.status(201).json({
+      message: `✅ Inserted ${shares.length} shares successfully`,
+      shares,
+    });
   } catch (error) {
-    console.error('Error inserting share:', error);
+    console.error('Error inserting shares:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };

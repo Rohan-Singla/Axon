@@ -1,35 +1,47 @@
 import { Request, Response } from 'express';
-import { JobModel } from '../models/job.model';
-import crypto from 'crypto'; 
+import { JobModel, Job } from '../models/job.model';
+import crypto from 'crypto';
 
-export const createJob = async (req: Request, res: Response) => {
+export const createJobs = async (req: Request, res: Response) => {
   try {
-    const { template_id, difficulty } = req.body;
+    const jobsInput = req.body;
 
-    if (!template_id || !difficulty) {
-      return res.status(400).json({ error: 'Missing required fields' });
+    if (!Array.isArray(jobsInput) || jobsInput.length === 0) {
+      return res.status(400).json({ error: 'Jobs must be a non-empty array' });
     }
 
-    const job_id = crypto.randomUUID();
-    const created_at = new Date().toISOString();
+    const jobs: Job[] = jobsInput.map((job) => {
+      if (!job.template_id || !job.difficulty) {
+        throw new Error('Missing required fields in one of the jobs');
+      }
+      return {
+        job_id: crypto.randomUUID(),
+        template_id: job.template_id,
+        difficulty: job.difficulty,
+        created_at: new Date().toISOString(),
+      };
+    });
 
-    const newJob = { job_id, template_id, difficulty, created_at };
-    
-    await JobModel.insert(newJob);
+    for (const job of jobs) {
+      await JobModel.insert(job);
+    }
 
-    res.json({ message: '✅ Job inserted successfully', job: newJob });
+    res.json({ message: `✅ Inserted ${jobs.length} jobs successfully`, jobs });
   } catch (error) {
-    console.error('Job insert error:', error);
-    res.status(500).json({ error: 'Failed to insert job' });
+    console.error('Batch job insert error:', error);
+    res.status(500).json({ error: 'Failed to insert jobs' });
   }
 };
 
 export const getJobById = async (req: Request, res: Response) => {
   try {
-    const job = await JobModel.findById(req.params.id as string);
+    const { id } = req.params;
+
+    const job = await JobModel.findById(id as string);
     if (!job) {
       return res.status(404).json({ error: 'Job not found' });
     }
+
     res.json(job);
   } catch (error) {
     console.error('Fetch job error:', error);

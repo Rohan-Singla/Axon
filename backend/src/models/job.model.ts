@@ -17,7 +17,7 @@ export class JobModel {
 
   static async findById(job_id: string): Promise<Job | null> {
     const resultSet = await client.query({
-      query: "SELECT * FROM jobs WHERE job_id = s{job_id:String} LIMIT 1",
+      query: "SELECT * FROM jobs WHERE job_id = {job_id:String} LIMIT 1",
       query_params: { job_id },
       format: "JSONEachRow",
     });

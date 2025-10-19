@@ -13,6 +13,6 @@ export const client = createClient({
     async_insert: 1,           
     wait_for_async_insert: 1,      
     async_insert_max_data_size: '3000000', 
-    async_insert_busy_timeout_ms: 3000,   
+    async_insert_busy_timeout_ms: 1000,   
   },
 })

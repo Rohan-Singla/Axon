@@ -10,7 +10,6 @@ export const createPayout = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    // ✅ Derive miner_id from users table
     const user = await UserModel.getUserInfo(user_id);
     if (!user || !user.miner_id) {
       return res.status(404).json({ error: 'User not found or miner_id missing' });
