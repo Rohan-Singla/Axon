@@ -4,7 +4,7 @@ export interface Job {
   job_id: string;
   template_id: string;
   difficulty: string;
-  created_at: string; 
+  created_at: string;
 }
 
 export class JobModel {

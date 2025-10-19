@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { PayoutModel } from '../models/payout.model';
+import { UserModel } from '../models/user.model';
 
 export const createPayout = async (req: Request, res: Response) => {
   try {
@@ -10,15 +11,17 @@ export const createPayout = async (req: Request, res: Response) => {
     }
 
     // ✅ Derive miner_id from users table
-    // const miner_id = await UserModel.findMinerIdByUserId(user_id);
-    // if (!miner_id) {
-    //   return res.status(404).json({ error: 'User not found or miner_id missing' });
-    // }
+    const user = await UserModel.getUserInfo(user_id);
+    if (!user || !user.miner_id) {
+      return res.status(404).json({ error: 'User not found or miner_id missing' });
+    }
+
+    const { miner_id } = user;
 
     const payout_id = crypto.randomUUID();
     const paid_at = new Date().toISOString();
 
-    // await PayoutModel.insert({ payout_id, miner_id, amount, tx_hash, paid_at });
+    await PayoutModel.insert({ payout_id, miner_id, amount, tx_hash, paid_at });
 
     res.json({ message: '✅ Payout inserted successfully' });
   } catch (error) {
