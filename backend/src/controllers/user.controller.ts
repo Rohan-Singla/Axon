@@ -26,16 +26,34 @@ export const getUserInfo = async (req: Request, res: Response) => {
 
 export const createUser = async (req: Request, res: Response) => {
   try {
-    const user_info: User = req.body;
+    const {
+      miner_id,
+      wallet_address,
+      connection_ip,
+      last_seen: lastSeenFromBody 
+    } = req.body;
 
-    if (!user_info.userId || !user_info.miner_id) {
-      return res.status(400).json({ error: 'Missing required fields' });
+    if (!miner_id) {
+      return res.status(400).json({ error: 'miner_id is required' });
     }
 
-    await UserModel.insertModel(user_info);
+    const userId = crypto.randomUUID();
+    const createdAt = new Date().toISOString();
 
-    res.status(201).json({ message: 'User inserted successfully' });
+    const newUser: User = {
+      userId,
+      miner_id,
+      wallet_address: wallet_address || '',
+      connection_ip: connection_ip || '',  
+      created_at: createdAt,
+      last_seen: lastSeenFromBody || createdAt,
+    };
+
+    await UserModel.insertModel(newUser);
+
+    res.status(201).json({ message: 'User inserted successfully', userId: newUser.userId });
   } catch (error) {
     console.error('Error inserting user:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 }
