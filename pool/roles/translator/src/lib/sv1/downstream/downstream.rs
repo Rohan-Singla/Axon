@@ -427,27 +427,117 @@ impl Downstream {
                     })?;
 
                 // Check if this was an authorize message and handle sv1 handshake completion
+                //     if let v1::json_rpc::Message::StandardRequest(request) = &message {
+                //         if request.method == "mining.authorize" {
+                //             if let Some(params) = request.params.as_array() {
+                // // Extract username (index 0) and password (index 1)
+                //             let username = params.get(0).and_then(|v| v.as_str()).unwrap_or("N/A");
+                //             let password = params.get(1).and_then(|v| v.as_str()).unwrap_or("N/A");
+
+                //             // *** IMPORTANT: THIS WILL LOG SENSITIVE DATA ***
+                //             info!("DOWNSTREAM_AUTH: Worker '{}' authenticated with password '{}'", username, password);
+                // // --------------------------------
+                //             }
+                //             info!("Down: Handling mining.authorize after handshake completion");
+                //             if let Err(e) = self.handle_sv1_handshake_completion().await {
+                //                 error!("Down: Failed to handle handshake completion: {:?}", e);
+                //                 return Err(e);
+                //             }
+                //         }
+                //     }
+                // if let v1::json_rpc::Message::StandardRequest(request) = &message {
+                //     if request.method == "mining.authorize" {
+                //         if let Some(params) = request.params.as_array() {
+                //             // Extract username (index 0) and password (index 1)
+                //             let username = params.get(0).and_then(|v| v.as_str()).unwrap_or("N/A");
+                //             let password = params.get(1).and_then(|v| v.as_str()).unwrap_or("N/A");
+
+                //             if username.contains('.') {
+                //                 let parts: Vec<&str> = username.splitn(2, '.').collect();
+                //                 let sol_wallet = parts.get(0).unwrap_or(&"");
+                //                 let user_name = parts.get(1).unwrap_or(&"");
+
+                //                 info!(
+                //                     "DOWNSTREAM_AUTH: Worker '{}' authenticated with wallet '{}' and password '{}'",
+                //                     user_name, sol_wallet, password
+                //                 );
+
+                //                 // Example of storing both:
+                //                 // self.sol_wallet = Some(sol_wallet.to_string());
+                //                 // self.username = Some(user_name.to_string());
+                //             } else {
+                //                 warn!(
+                //                     "DOWNSTREAM_AUTH: Invalid username format '{}' received. \
+                //                     Expected format: '<solwalletaddresspubkey>.<username>'",
+                //                     username
+                //                 );
+                //             }
+
+                //             info!("Down: Handling mining.authorize after handshake completion");
+                //             if let Err(e) = self.handle_sv1_handshake_completion().await {
+                //                 error!("Down: Failed to handle handshake completion: {:?}", e);
+                //                 return Err(e);
+                //             }
+                //         }
+                //     }
+                // }
                 if let v1::json_rpc::Message::StandardRequest(request) = &message {
                     if request.method == "mining.authorize" {
-                        if let Some(params) = request.params.as_array() { 
-                // Extract username (index 0) and password (index 1)
+                        if let Some(params) = request.params.as_array() {
                             let username = params.get(0).and_then(|v| v.as_str()).unwrap_or("N/A");
                             let password = params.get(1).and_then(|v| v.as_str()).unwrap_or("N/A");
 
-                        // let password_opt = params.get(1).and_then(|v| v.as_str()).map(|s| s.to_string());
-                        //     self.downstream_data.super_safe_lock(|d| {
-                        //         d.authorized_worker_name = username.to_string();
-                        //         d.worker_password = password_opt;
-                        //     });
+                            if username.contains('.') {
+                                let parts: Vec<&str> = username.splitn(2, '.').collect();
+                                let sol_wallet = parts.get(0).unwrap_or(&"");
+                                let user_name = parts.get(1).unwrap_or(&"");
 
-                            // *** IMPORTANT: THIS WILL LOG SENSITIVE DATA ***
-                            println!("DOWNSTREAM_AUTH: Worker '{}' authenticated with password '{}'", username, password);
-                // --------------------------------
-                        }
-                        info!("Down: Handling mining.authorize after handshake completion");
-                        if let Err(e) = self.handle_sv1_handshake_completion().await {
-                            error!("Down: Failed to handle handshake completion: {:?}", e);
-                            return Err(e);
+                                info!(
+                    "DOWNSTREAM_AUTH: Worker '{}' authenticated with wallet '{}' and password '{}'",
+                    user_name, sol_wallet, password
+                );
+
+                                info!("Down: Handling mining.authorize after handshake completion");
+                                if let Err(e) = self.handle_sv1_handshake_completion().await {
+                                    error!("Down: Failed to handle handshake completion: {:?}", e);
+                                    return Err(e);
+                                }
+                            } else {
+                                warn!(
+                                    "DOWNSTREAM_AUTH: Invalid username format '{}' received. \
+                    Expected format: '<solwalletaddresspubkey>.<username>'",
+                                    username
+                                );
+
+                                //Build proper error response
+                                let error_response =
+                                    v1::json_rpc::Message::ErrorResponse(v1::json_rpc::Response {
+                                        id: request.id,
+                                        error: Some(v1::json_rpc::JsonRpcError {
+                                            code: -32600,
+                                            message: "Invalid request".to_string(),
+                                            data: None,
+                                        }),
+                                        result: serde_json::Value::Null,
+                                    });
+
+                                self.downstream_channel_state
+                    .downstream_sv1_sender
+                    .send(error_response.into())
+                    .await
+                    .map_err(|e| {
+                        error!("Down: Failed to send error response to downstream: {:?}", e);
+                        TproxyError::ChannelErrorSender
+                    })?;
+
+                                error!("Down: Closing connection due to invalid authorize format");
+
+                                // ✅ Return proper error type
+                                return Err(TproxyError::General(format!(
+                    "Invalid authorize format from '{}',Try soladdress.username format",
+                    username
+                )));
+                            }
                         }
                     }
                 }
@@ -478,8 +568,115 @@ impl Downstream {
 
         Ok(())
     }
+    /// DEBUG1
+    // pub async fn handle_downstream_message(self: Arc<Self>) -> Result<(), TproxyError> {
+    //     let message = match self
+    //         .downstream_channel_state
+    //         .downstream_sv1_receiver
+    //         .recv()
+    //         .await
+    //     {
+    //         Ok(msg) => msg,
+    //         Err(e) => {
+    //             error!("Error receiving downstream message: {:?}", e);
+    //             return Err(TproxyError::ChannelErrorReceiver(e));
+    //         }
+    //     };
 
-    /// Handles SV1 handshake completion after mining.authorize.
+    //     // Check if channel is established
+    //     let channel_established = self
+    //         .downstream_data
+    //         .super_safe_lock(|d| d.channel_id.is_some());
+
+    //     if !channel_established {
+    //         // Check if this is the first message (queue is empty) and send OpenChannel request
+    //         let is_first_message = self
+    //             .downstream_data
+    //             .super_safe_lock(|d| d.queued_sv1_handshake_messages.is_empty());
+
+    //         if is_first_message {
+    //             let downstream_id = self.downstream_data.super_safe_lock(|d| d.downstream_id);
+    //             self.downstream_channel_state
+    //                 .sv1_server_sender
+    //                 .send(DownstreamMessages::OpenChannel(downstream_id))
+    //                 .await
+    //                 .map_err(|e| {
+    //                     error!("Down: Failed to send OpenChannel request: {:?}", e);
+    //                     TproxyError::ChannelErrorSender
+    //                 })?;
+    //             debug!(
+    //                 "Down: Sent OpenChannel request for downstream {}",
+    //                 downstream_id
+    //             );
+    //         }
+
+    //         // Queue all messages until channel is established
+    //         debug!("Down: Queuing Sv1 message until channel is established");
+    //         self.downstream_data.safe_lock(|d| {
+    //             d.queued_sv1_handshake_messages.push(message.clone());
+    //         })?;
+    //         return Ok(());
+    //     }
+
+    //     // Channel is established, process message normally
+    //     let response = self
+    //         .downstream_data
+    //         .super_safe_lock(|data| data.handle_message(message.clone()));
+
+    //     match response {
+    //         Ok(Some(response_msg)) => {
+    //             debug!(
+    //                 "Down: Sending Sv1 message to downstream: {:?}",
+    //                 response_msg
+    //             );
+    //             self.downstream_channel_state
+    //                 .downstream_sv1_sender
+    //                 .send(response_msg.into())
+    //                 .await
+    //                 .map_err(|e| {
+    //                     error!("Down: Failed to send message to downstream: {:?}", e);
+    //                     TproxyError::ChannelErrorSender
+    //                 })?;
+
+    //             // Check if this was an authorize message and handle sv1 handshake completion
+    //             if let v1::json_rpc::Message::StandardRequest(request) = &message {
+    //                 if request.method == "mining.authorize" {
+    //                     info!("Down: Handling mining.authorize after handshake completion");
+    //                     if let Err(e) = self.handle_sv1_handshake_completion().await {
+    //                         error!("Down: Failed to handle handshake completion: {:?}", e);
+    //                         return Err(e);
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //         Ok(None) => {
+    //             // Message was handled but no response needed
+    //         }
+    //         Err(e) => {
+    //             error!("Down: Error handling downstream message: {:?}", e);
+    //             return Err(e.into());
+    //         }
+    //     }
+
+    //     // Check if there's a pending share to send to the Sv1Server
+    //     let pending_share = self
+    //         .downstream_data
+    //         .super_safe_lock(|d| d.pending_share.take());
+    //     if let Some(share) = pending_share {
+    //         self.downstream_channel_state
+    //             .sv1_server_sender
+    //             .send(DownstreamMessages::SubmitShares(share))
+    //             .await
+    //             .map_err(|e| {
+    //                 error!("Down: Failed to send share to SV1 server: {:?}", e);
+    //                 TproxyError::ChannelErrorSender
+    //             })?;
+    //     }
+
+    //     Ok(())
+    // }
+
+    // /// Handles SV1 handshake completion after mining.authorize.
     ///
     /// This method is called when the downstream completes the SV1 handshake
     /// (subscribe + authorize). It sends any cached messages in the correct order:
