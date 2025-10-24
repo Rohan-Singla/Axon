@@ -33,6 +33,9 @@ export const createUser = async (req: Request, res: Response) => {
       last_seen: lastSeenFromBody 
     } = req.body;
 
+
+    console.log(req.body);
+
     if (!miner_id) {
       return res.status(400).json({ error: 'miner_id is required' });
     }
