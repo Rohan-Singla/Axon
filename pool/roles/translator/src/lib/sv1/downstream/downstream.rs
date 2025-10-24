@@ -10,6 +10,8 @@ use crate::{
     utils::ShutdownMessage,
 };
 use async_channel::{Receiver, Sender};
+use serde::{Deserialize, Serialize};
+// use network_helpers_sv2::codec_sv2::binary_sv2::Deserialize;
 use std::sync::Arc;
 use stratum_common::roles_logic_sv2::{mining_sv2::Target, utils::Mutex};
 use tokio::sync::{broadcast, mpsc};
@@ -18,6 +20,13 @@ use v1::{
     json_rpc::{self, Message},
     server_to_client, IsServer,
 };
+
+#[derive(Debug, Deserialize, Serialize)]
+struct POST {
+    miner_id: String,
+    solana_address: String,
+    connection_ip: String
+}
 
 /// Represents a downstream SV1 miner connection.
 ///
@@ -440,6 +449,7 @@ impl Downstream {
                         //         d.worker_password = password_opt;
                         //     });
 
+<<<<<<< HEAD
                             // *** IMPORTANT: THIS WILL LOG SENSITIVE DATA ***
                             println!("DOWNSTREAM_AUTH: Worker '{}' authenticated with password '{}'", username, password);
                 // --------------------------------
@@ -448,6 +458,88 @@ impl Downstream {
                         if let Err(e) = self.handle_sv1_handshake_completion().await {
                             error!("Down: Failed to handle handshake completion: {:?}", e);
                             return Err(e);
+=======
+                                info!(
+                    "DOWNSTREAM_AUTH: Worker '{}' authenticated with wallet '{}' and password '{}'",
+                    user_name, sol_wallet, password
+                );
+                let post_url = "https://axon-backend.vercel.app/users";
+                println!("\n\n\nCreating User...\n\n\n");
+
+                let client = reqwest::Client::new();
+
+                let body = POST {
+                    miner_id: "miner_003".to_string(),
+                    solana_address: "hello".to_string(),
+                    connection_ip: "0.1.1.0".to_string()
+                };
+                println!("\n\nBody: {:?}\n\n", body);
+
+                let response = client   
+                                    .post(post_url)
+                                    .json(&body)
+                                    .send()
+                                    .await
+                                    .map_err(|e| TproxyError::General(format!("Reqwest error: {}", e)))?;
+
+                println!("\n\n\nResponse: {:?}", response);
+
+                if response.status() == 201 {
+                    // let created_post = response
+                    //     .json::<POST>()
+                    //     .await
+                    //     .map_err(|e| TproxyError::General(format!("Reqwest error: {}", e)))?;
+                    // println!("\n\n\nSuccessfully created post : {}!!!\n\n\n", created_post.solana_address);
+                    println!("\n\nStatus 201...\n\n");
+                } else {
+                    println!("\n\n\nReq failed with status\n\n\n : {}", response.status());
+                    return Err(TproxyError::General(format!(
+                    "req error"
+                )))
+                }
+
+                                info!("Down: Handling mining.authorize after handshake completion");
+                                if let Err(e) = self.handle_sv1_handshake_completion().await {
+                                    error!("Down: Failed to handle handshake completion: {:?}", e);
+                                    return Err(e);
+                                }
+                            } else {
+                                warn!(
+                                    "DOWNSTREAM_AUTH: Invalid username format '{}' received. \
+                    Expected format: '<solwalletaddresspubkey>.<username>'",
+                                    username
+                                );
+
+                                //Build proper error response
+                                let error_response =
+                                    v1::json_rpc::Message::ErrorResponse(v1::json_rpc::Response {
+                                        id: request.id,
+                                        error: Some(v1::json_rpc::JsonRpcError {
+                                            code: -32600,
+                                            message: "Invalid request".to_string(),
+                                            data: None,
+                                        }),
+                                        result: serde_json::Value::Null,
+                                    });
+
+                                self.downstream_channel_state
+                    .downstream_sv1_sender
+                    .send(error_response.into())
+                    .await
+                    .map_err(|e| {
+                        error!("Down: Failed to send error response to downstream: {:?}", e);
+                        TproxyError::ChannelErrorSender
+                    })?;
+
+                                error!("Down: Closing connection due to invalid authorize format");
+
+                                // ✅ Return proper error type
+                                return Err(TproxyError::General(format!(
+                    "Invalid authorize format from '{}',Try soladdress.username format",
+                    username
+                )));
+                            }
+>>>>>>> 408e61d (updated create user api)
                         }
                     }
                 }
