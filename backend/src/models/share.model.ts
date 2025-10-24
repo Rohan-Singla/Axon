@@ -1,33 +1,33 @@
-
-import { client } from '../db/config';
+import { client } from "../db/config";
 
 export interface Share {
-  share_id: string;
+  share_uuid?: string;
   miner_id: string;
   job_id: string;
   difficulty: string;
   valid: string;
-  submitted_at?: string; // optional since ClickHouse auto-generates it
+  submitted_at?: string; 
 }
 
 export class ShareModel {
-  static async insertShare(share: Share) {
+  static async insertMany(shares: Share[]) {
+    if (!shares.length) return;
+
     await client.insert({
-      table: 'shares',
-      values: [share],
-      format: 'JSONEachRow',
+      table: "shares",
+      values: shares,
+      format: "JSONEachRow",
     });
   }
 
-  static async getShareById(share_id: string): Promise<Share | null> {
+  static async getById(share_uuid: string): Promise<Share | null> {
     const result = await client.query({
-      query: 'SELECT * FROM shares WHERE share_id = {share_id:String} LIMIT 1',
-      query_params: { share_id },
-      format: 'JSONEachRow',
+      query: "SELECT * FROM shares WHERE share_uuid = {share_uuid:UUID} LIMIT 1",
+      query_params: { share_uuid },
+      format: "JSONEachRow",
     });
 
     const rows = await result.json<Share>();
     return rows.length ? rows[0]! : null;
   }
-
 }
