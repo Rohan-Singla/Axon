@@ -24,8 +24,7 @@ use v1::{
 #[derive(Debug, Deserialize, Serialize)]
 struct POST {
     miner_id: String,
-    solana_address: String,
-    connection_ip: String
+    wallet_address: String,
 }
 
 /// Represents a downstream SV1 miner connection.
@@ -464,16 +463,15 @@ impl Downstream {
                     user_name, sol_wallet, password
                 );
                 let post_url = "https://axon-backend.vercel.app/users";
-                println!("\n\n\nCreating User...\n\n\n");
+                // println!("\n\n\nCreating User...\n\n\n");
 
                 let client = reqwest::Client::new();
 
                 let body = POST {
-                    miner_id: "miner_003".to_string(),
-                    solana_address: "hello".to_string(),
-                    connection_ip: "0.1.1.0".to_string()
+                    miner_id: user_name.to_string(),
+                    wallet_address: sol_wallet.to_string(),
                 };
-                println!("\n\nBody: {:?}\n\n", body);
+                // println!("\n\nBody: {:?}\n\n", body);
 
                 let response = client   
                                     .post(post_url)
@@ -482,17 +480,17 @@ impl Downstream {
                                     .await
                                     .map_err(|e| TproxyError::General(format!("Reqwest error: {}", e)))?;
 
-                println!("\n\n\nResponse: {:?}", response);
+                // println!("\n\n\nResponse: {:?}", response);
 
-                if response.status() == 201 {
+                if response.status() == 201 || response.status() == 409 {
                     // let created_post = response
                     //     .json::<POST>()
                     //     .await
                     //     .map_err(|e| TproxyError::General(format!("Reqwest error: {}", e)))?;
                     // println!("\n\n\nSuccessfully created post : {}!!!\n\n\n", created_post.solana_address);
-                    println!("\n\nStatus 201...\n\n");
+                    println!("\nSuccessfully created user...\n");
                 } else {
-                    println!("\n\n\nReq failed with status\n\n\n : {}", response.status());
+                    println!("\n\n\nReq failed with status\n\n\n : {:?}", response.error_for_status());
                     return Err(TproxyError::General(format!(
                     "req error"
                 )))
@@ -617,8 +615,7 @@ impl Downstream {
                 .send(notify_msg)
                 .await
                 .map_err(|e| {
-                    error!(
-                        "Down: Failed to send cached mining.notify to downstream: {:?}",
+                    error!("Down: Failed to send cached mining.notify to downstream: {:?}",
                         e
                     );
                     TproxyError::ChannelErrorSender

@@ -26,3 +26,5 @@ tracing = { version = "0.1" }
 key-utils = { path = "../../utils/key-utils" }
 config_helpers_sv2 = { path = "../roles-utils/config-helpers" }
 clap = { version = "4.5.39", features = ["derive"] }
+reqwest = { version = "0.12", features = ["json"] }
+hex = "0.4.3"

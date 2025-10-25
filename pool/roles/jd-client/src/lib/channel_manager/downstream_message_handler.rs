@@ -1,3 +1,4 @@
+use serde::{Deserialize, Serialize};
 use stratum_common::roles_logic_sv2::{
     self,
     bitcoin::Amount,
@@ -53,6 +54,14 @@ pub enum RouteMessageTo<'a> {
     TemplateProvider(TemplateDistribution<'a>),
     /// Route to a specific downstream client by ID, along with its mining message.
     Downstream((u32, Mining<'a>)),
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct ShareData {
+    pub miner_id: String,
+    pub job_id: String,
+    pub difficulty: String,
+    pub valid: String,
 }
 
 impl<'a> From<Mining<'a>> for RouteMessageTo<'a> {
@@ -872,6 +881,9 @@ impl HandleMiningMessagesFromClientAsync for ChannelManager {
         let channel_id = msg.channel_id;
         let job_id = msg.job_id;
 
+        println!("\n\n\nmsg from downstream mesg handler: {:?} and self: {:?}", msg, self.user_identity);
+        let mut share_data_to_post: Option<ShareData> = None;
+
         let build_error = |code: &str| {
             Mining::SubmitSharesError(SubmitSharesError {
                 channel_id,
@@ -884,7 +896,7 @@ impl HandleMiningMessagesFromClientAsync for ChannelManager {
             let Some(downstream_id) = channel_manager_data.channel_id_to_downstream_id.get(&channel_id) else {
                 warn!("No downstream_id found for channel_id={channel_id}");
                 return Err(JDCError::DownstreamNotFoundWithChannelId(channel_id))
-            };
+            };                
             let Some(downstream) = channel_manager_data.downstream.get_mut(downstream_id) else {
                 warn!("No downstream found for downstream_id={downstream_id}");
                 return Err(JDCError::DownstreamNotFound(*downstream_id));
@@ -908,8 +920,39 @@ impl HandleMiningMessagesFromClientAsync for ChannelManager {
                 vardiff.increment_shares_since_last_update();
                 let res = standard_channel.validate_share(msg.clone());
                 let mut is_downstream_share_valid = false;
+
+
                 match res {
                     Ok(ShareValidationResult::Valid) => {
+
+                        // let post_url = "https://axon-backend.vercel.app/users";
+                        // // println!("\n\n\nCreating User...\n\n\n");
+
+                        // let client = reqwest::Client::new();
+
+                        // let body = ShareData {
+                        //     miner_id: channel_id.to_string(),
+                        //     job_id: job_id.to_string(),
+                        //     difficulty: "23".to_string(),
+                        //     valid: "true".to_string()
+                        // };
+                        // // println!("\n\nBody: {:?}\n\n", body);
+
+                        // let response = client   
+                        //                     .post(post_url)
+                        //                     .json(&body)
+                        //                     .send()
+                        //                     .await?;
+
+                        let current_target = standard_channel.get_target();
+                        let target_u256: stratum_common::roles_logic_sv2::codec_sv2::binary_sv2::U256 = current_target.clone().into();
+                        let mut target_bytes = target_u256.to_vec();
+                        target_bytes.reverse();
+                        let channel_target_hex = hex::encode(target_bytes);
+
+                        println!("\n\nFrom standard valid found with difficulty: {}\n\n", channel_target_hex);
+                        share_data_to_post = Some(ShareData { miner_id: channel_id.to_string(), job_id: job_id.to_string(), difficulty: channel_target_hex, valid: "true".to_string() });
+
                         info!(
                             "SubmitSharesStandard on downstream channel: valid share | channel_id: {}, sequence_number: {} ☑️",
                             channel_id, msg.sequence_number
@@ -927,6 +970,17 @@ impl HandleMiningMessagesFromClientAsync for ChannelManager {
                             new_submits_accepted_count,
                             new_shares_sum,
                         };
+
+                        let current_target = standard_channel.get_target();
+                        let target_u256: stratum_common::roles_logic_sv2::codec_sv2::binary_sv2::U256 = current_target.clone().into();
+                        let mut target_bytes = target_u256.to_vec();
+                        target_bytes.reverse();
+                        let channel_target_hex = hex::encode(target_bytes);
+
+                        println!("\n\nFrom standard valid with acknowledgement found with difficulty: {}\n\n", channel_target_hex);
+
+                        share_data_to_post = Some(ShareData { miner_id: channel_id.to_string(), job_id: job_id.to_string(), difficulty: channel_target_hex, valid: "true".to_string() });
+
                         is_downstream_share_valid = true;
                         info!("SubmitSharesStandard on downstream channel: {} ✅", success);
                         messages.push(
@@ -956,6 +1010,16 @@ impl HandleMiningMessagesFromClientAsync for ChannelManager {
                             new_submits_accepted_count: share_accounting.get_shares_accepted(),
                             new_shares_sum: share_accounting.get_share_work_sum(),
                         };
+                        let current_target = standard_channel.get_target();
+                        let target_u256: stratum_common::roles_logic_sv2::codec_sv2::binary_sv2::U256 = current_target.clone().into();
+                        let mut target_bytes = target_u256.to_vec();
+                        target_bytes.reverse();
+                        let channel_target_hex = hex::encode(target_bytes);
+
+                        println!("\n\nFrom standard block found with difficulty: {}\n\n", channel_target_hex);
+
+                        share_data_to_post = Some(ShareData { miner_id: channel_id.to_string(), job_id: job_id.to_string(), difficulty: channel_target_hex, valid: "true".to_string() });
+
                         messages.push((
                             downstream.downstream_id,
                             Mining::SubmitSharesSuccess(success),
@@ -1043,9 +1107,28 @@ impl HandleMiningMessagesFromClientAsync for ChannelManager {
                     }
                 }
 
+                
                 Ok(messages)
             })
-        })?;
+        })?;    
+
+        if let Some(share_data) = share_data_to_post {
+            println!("\n\nCreating new share with standard and with data: {:?}\n\n", &share_data);
+            let url = "https://axon-backend.vercel.app/shares";
+            let client = reqwest::Client::new();
+            if let Err(e) = client
+                .post(url)
+                .json(&share_data)
+                .send()
+                .await
+            {
+                error!("Failed to post share data: {:?}", e);
+                // Optionally, you can return a custom error here:
+                // return Err(JDCError::Other(format!("Reqwest error: {}", e)));
+            }
+        }
+
+        
 
         for messages in messages {
             messages.forward(&self.channel_manager_channel).await;
@@ -1080,6 +1163,7 @@ impl HandleMiningMessagesFromClientAsync for ChannelManager {
                 error_code: code.to_string().try_into().expect("valid error code"),
             })
         };
+        let mut share_data_to_post: Option<ShareData> = None;
 
         let messages = self.channel_manager_data.super_safe_lock(|channel_manager_data| {
             let Some(downstream_id) = channel_manager_data.channel_id_to_downstream_id.get(&channel_id) else {
@@ -1108,12 +1192,24 @@ impl HandleMiningMessagesFromClientAsync for ChannelManager {
                 vardiff.increment_shares_since_last_update();
                 let res = extended_channel.validate_share(msg.clone());
                 let mut is_downstream_share_valid = false;
+
+
                 match res {
                     Ok(ShareValidationResult::Valid) => {
                         info!(
                             "SubmitSharesExtended on downstream channel: valid share | channel_id: {}, sequence_number: {} ☑️",
                             channel_id, msg.sequence_number
                         );
+                        let current_target = extended_channel.get_target();
+                        let target_u256: stratum_common::roles_logic_sv2::codec_sv2::binary_sv2::U256 = current_target.clone().into();
+                        let mut target_bytes = target_u256.to_vec();
+                        target_bytes.reverse();
+                        let channel_target_hex = hex::encode(target_bytes);
+
+                        println!("\n\nFrom extended valid with difficulty: {}\n\n", channel_target_hex);
+
+                        share_data_to_post = Some(ShareData { miner_id: channel_id.to_string(), job_id: job_id.to_string(), difficulty: channel_target_hex, valid: "true".to_string() });
+
                         is_downstream_share_valid = true;
                     }
                     Ok(ShareValidationResult::ValidWithAcknowledgement(
@@ -1127,6 +1223,17 @@ impl HandleMiningMessagesFromClientAsync for ChannelManager {
                             new_submits_accepted_count,
                             new_shares_sum,
                         };
+
+                        let current_target = extended_channel.get_target();
+                        let target_u256: stratum_common::roles_logic_sv2::codec_sv2::binary_sv2::U256 = current_target.clone().into();
+                        let mut target_bytes = target_u256.to_vec();
+                        target_bytes.reverse();
+                        let channel_target_hex = hex::encode(target_bytes);
+                        
+                        println!("\n\nFrom extended valid with acknowledgement found with difficulty: {}\n\n", channel_target_hex);
+                        share_data_to_post = Some(ShareData { miner_id: channel_id.to_string(), job_id: job_id.to_string(), difficulty: channel_target_hex, valid: "true".to_string() });
+
+
                         info!("SubmitSharesExtended on downstream channel: {} ✅", success);
                         is_downstream_share_valid = true;
                         messages.push((
@@ -1136,6 +1243,17 @@ impl HandleMiningMessagesFromClientAsync for ChannelManager {
                     }
                     Ok(ShareValidationResult::BlockFound(template_id, coinbase)) => {
                         info!("SubmitSharesExtended on downstream channel: 💰 Block Found!!! 💰");
+
+                        let current_target = extended_channel.get_target();
+                        let target_u256: stratum_common::roles_logic_sv2::codec_sv2::binary_sv2::U256 = current_target.clone().into();
+                        let mut target_bytes = target_u256.to_vec();
+                        target_bytes.reverse();
+                        let channel_target_hex = hex::encode(target_bytes);
+
+                        println!("\n\nFrom extended block found with difficulty: {}\n\n", channel_target_hex);
+
+                        share_data_to_post = Some(ShareData { miner_id: channel_id.to_string(), job_id: job_id.to_string(), difficulty: channel_target_hex, valid: "true".to_string() });
+
                         if let Some(template_id) = template_id {
                             info!("SubmitSharesExtended: Propagating solution to the Template Provider.");
                             let solution = SubmitSolution {
@@ -1248,6 +1366,23 @@ impl HandleMiningMessagesFromClientAsync for ChannelManager {
                 Ok(messages)
             })
         })?;
+
+        if let Some(share_data) = share_data_to_post {
+            println!("\n\nMaking post request with share data: {:?}\n\n", &share_data);
+            let url = "https://axon-backend.vercel.app/shares";
+            let client = reqwest::Client::new();
+            if let Err(e) = client
+                .post(url)
+                .json(&share_data)
+                .send()
+                .await
+            {
+                error!("\n\nFailed to post share data: {:?}\n\n", e);
+                // Optionally, you can return a custom error here:
+                // return Err(JDCError::Other(format!("Reqwest error: {}", e)));
+            }
+        }
+        
 
         for messages in messages {
             messages.forward(&self.channel_manager_channel).await;
