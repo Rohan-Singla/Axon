@@ -24,13 +24,17 @@ export const getShareById = async (req: Request, res: Response) => {
 
 export const createShares = async (req: Request, res: Response) => {
   try {
-    const sharesInput = req.body;
+    let sharesInput = req.body;
 
-    if (!Array.isArray(sharesInput) || sharesInput.length === 0) {
-      return res.status(400).json({ error: "Shares must be a non-empty array" });
+    if (!Array.isArray(sharesInput)) {
+      sharesInput = [sharesInput];
     }
 
-    const shares: Share[] = sharesInput.map((share) => {
+    if (sharesInput.length === 0) {
+      return res.status(400).json({ error: "Shares must be a non-empty array or object" });
+    }
+
+    const shares: Share[] = sharesInput.map((share : any) => {
       if (!share.miner_id || !share.job_id || !share.difficulty || !share.valid) {
         throw new Error("Missing required fields in one of the shares");
       }
@@ -46,7 +50,7 @@ export const createShares = async (req: Request, res: Response) => {
     await ShareModel.insertMany(shares);
 
     res.status(201).json({
-      message: `✅ Inserted ${shares.length} shares successfully`,
+      message: `✅ Inserted ${shares.length} share${shares.length > 1 ? "s" : ""} successfully`,
       shares,
     });
   } catch (error) {
