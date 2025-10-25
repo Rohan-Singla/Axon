@@ -8,7 +8,7 @@ export default function Features() {
     {
       icon: Shield,
       title: "Secure & Trustless",
-      description: "Smart contracts ensure fair distribution based on share contribution.",
+      description: "Our secure backend ensures fair distribution based on share contribution.",
     },
     {
       icon: Zap,
@@ -17,8 +17,8 @@ export default function Features() {
     },
     {
       icon: Users,
-      title: "Community Driven",
-      description: "Open-source pool design with plans for self-hosted deployments.",
+      title: "Open Source",
+      description: "Axon is fully open source and available on Github.",
     },
     {
       icon: TrendingUp,
@@ -33,7 +33,7 @@ export default function Features() {
     {
       icon: Cpu,
       title: "Optimized for Small Miners",
-      description: "Designed specifically for Bitaxe and similar home mining devices.",
+      description: "Designed specifically for Bitaxe and similar home mining devices but anyone can join the pool.",
     },
   ]
 

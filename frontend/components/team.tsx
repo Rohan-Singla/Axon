@@ -1,32 +1,28 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Github, Twitter, Linkedin } from "lucide-react"
+import { Github, X } from "lucide-react"
 
 const team = [
   {
-    name: "Alex Chen",
-    role: "Lead Developer",
-    bio: "Solana blockchain expert with 5+ years in Web3",
-    socials: { github: "#", twitter: "#", linkedin: "#" },
+    name: "Rohan Singla",
+    role: "Full Stack & Solana Dev",
+    socials: { github: "https://github.com/Rohan-Singla", twitter: "https://x.com/rohanBuilds/" },
   },
   {
-    name: "Jordan Smith",
-    role: "Mining Specialist",
-    bio: "Bitcoin mining veteran, optimizing pool efficiency",
-    socials: { github: "#", twitter: "#", linkedin: "#" },
+    name: "Kavyam Singh",
+    role: "Backend & Solana Dev",
+    socials: { github: "https://github.com/Kym0211", twitter: "https://x.com/KavyamSingh" },
   },
   {
-    name: "Sam Patel",
-    role: "Protocol Designer",
-    bio: "Cryptography researcher focused on micropayments",
-    socials: { github: "#", twitter: "#", linkedin: "#" },
+    name: "Ishan Raghuvanshi",
+    role: "Solana Dev",
+    socials: { github: "https://github.com/IshanHunt77", twitter: "https://x.com/ishantwtss" },
   },
   {
-    name: "Casey Rivera",
-    role: "Community Lead",
-    bio: "Building bridges between miners and the ecosystem",
-    socials: { github: "#", twitter: "#", linkedin: "#" },
+    name: "Love Gupta",
+    role: "Solana and Backend Dev ",
+    socials: { github: "https://github.com/Lovegupta112", twitter: "https://x.com/MeLovegupta"},
   },
 ]
 
@@ -43,7 +39,7 @@ export default function Team() {
         >
           <h2 className="text-4xl sm:text-5xl font-bold mb-4">Meet the Team</h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Passionate builders and researchers dedicated to revolutionizing Bitcoin mining
+            Passionate team of builders behind Axon.
           </p>
         </motion.div>
 
@@ -62,16 +58,12 @@ export default function Team() {
               </div>
               <h3 className="text-lg font-bold mb-1">{member.name}</h3>
               <p className="text-sm text-accent font-semibold mb-3">{member.role}</p>
-              <p className="text-sm text-muted-foreground mb-4">{member.bio}</p>
-              <div className="flex gap-3">
+              <div className="gap-3 flex text-base">
                 <a href={member.socials.github} className="text-muted-foreground hover:text-primary transition">
-                  <Github className="w-4 h-4" />
+                  <Github  />
                 </a>
-                <a href={member.socials.twitter} className="text-muted-foreground hover:text-primary transition">
-                  <Twitter className="w-4 h-4" />
-                </a>
-                <a href={member.socials.linkedin} className="text-muted-foreground hover:text-primary transition">
-                  <Linkedin className="w-4 h-4" />
+                <a href={member.socials.twitter} className="text-muted-foreground hover:text-primary transition font-bold text-xl">
+                  X
                 </a>
               </div>
             </motion.div>

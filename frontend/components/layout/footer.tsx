@@ -22,13 +22,10 @@ export default function Footer() {
           </div>
 
           <div className="flex gap-6 text-sm text-muted-foreground">
-            <a href="#" className="hover:text-primary transition">
-              Discord
+            <a href="https://x.com/AxonForMiners" className="hover:text-primary transition font-bold">
+              X
             </a>
-            <a href="#" className="hover:text-primary transition">
-              Twitter
-            </a>
-            <a href="#" className="hover:text-primary transition">
+            <a href="https://github.com/Rohan-Singla/axon/" className="hover:text-primary transition">
               GitHub
             </a>
           </div>

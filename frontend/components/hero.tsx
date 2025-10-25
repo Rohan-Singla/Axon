@@ -15,15 +15,6 @@ export default function Hero() {
     },
   }
 
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.8, ease: "easeOut" },
-    },
-  }
-
   return (
     <section className="min-h-screen pt-32 pb-20 px-4 sm:px-6 lg:px-8 flex items-center justify-center relative overflow-hidden">
       {/* Background gradient orbs */}
@@ -41,7 +32,7 @@ export default function Hero() {
       >
         <motion.div className="mb-6">
           <span className="inline-block px-4 py-2 bg-primary/10 border border-primary/30 rounded-full text-sm text-primary font-medium">
-            🚀 Built for Cypherpunk Hackathon
+            🚀 Built for Cypherpunk Hackathon on Solana
           </span>
         </motion.div>
 
@@ -58,19 +49,16 @@ export default function Hero() {
         </motion.p>
 
         <motion.div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-          <button className="px-8 py-3 bg-gradient-to-r from-primary to-accent text-primary-foreground rounded-lg font-semibold hover:shadow-lg hover:shadow-primary/50 transition-all duration-300 flex items-center gap-2 group">
-            Launch Mining Pool
+          <button className="px-8 py-3 cursor-pointer bg-gradient-to-r from-primary to-accent text-primary-foreground rounded-lg font-semibold hover:shadow-lg hover:shadow-primary/50 transition-all duration-300 flex items-center gap-2 group">
+            View Demo Now
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition" />
-          </button>
-          <button className="px-8 py-3 border border-primary/50 text-primary rounded-lg font-semibold hover:bg-primary/10 transition">
-            Read Whitepaper
           </button>
         </motion.div>
 
         <motion.div className="mt-16 grid grid-cols-3 gap-8 text-center">
           <div>
-            <div className="text-3xl font-bold text-accent">0.001</div>
-            <div className="text-sm text-muted-foreground">Min Payout (BTC)</div>
+            <div className="text-3xl font-bold text-accent">0.00001</div>
+            <div className="text-sm text-muted-foreground">Min Contribtion Required (BTC)</div>
           </div>
           <div>
             <div className="text-3xl font-bold text-primary">Instant</div>

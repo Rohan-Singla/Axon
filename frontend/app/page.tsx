@@ -5,11 +5,9 @@ import Problem from "@/components/problem"
 import Solution from "@/components/solution"
 import HowItWorks from "@/components/how-it-works"
 import Features from "@/components/features"
-import Architecture from "@/components/architecture"
 import Team from "@/components/team"
 import FuturePlans from "@/components/future-plans"
 import DemoVideo from "@/components/demo-video"
-import CTA from "@/components/cta"
 import Footer from "@/components/layout/footer"
 
 export default function Home() {
@@ -21,11 +19,9 @@ export default function Home() {
       <Solution />
       <HowItWorks />
       <Features />
-      <Architecture />
       <DemoVideo />
       <Team />
       <FuturePlans />
-      <CTA />
       <Footer />
     </main>
   )

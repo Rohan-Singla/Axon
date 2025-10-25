@@ -6,9 +6,8 @@ import { Zap, TrendingUp, Shield, Globe } from "lucide-react"
 const plans = [
   {
     icon: Zap,
-    title: "Layer 2 Integration",
-    description: "Expand to Solana's Layer 2 solutions for even faster, cheaper transactions",
-    timeline: "Q2 2025",
+    title: "Implementing smart contracts for micropayments on Solana.",
+    description: "Implementing smart contracts for micropayments on Solana. To build a more secure and efficient system.",
   },
   {
     icon: TrendingUp,
@@ -20,13 +19,11 @@ const plans = [
     icon: Shield,
     title: "Advanced Security",
     description: "Implement multi-sig wallets and enhanced security protocols for large pools",
-    timeline: "Q2 2025",
   },
   {
     icon: Globe,
     title: "Global Expansion",
     description: "Launch regional mining pools optimized for different geographic locations",
-    timeline: "Q4 2025",
   },
 ]
 

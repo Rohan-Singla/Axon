@@ -8,12 +8,12 @@ export default function HowItWorks() {
     {
       number: "01",
       title: "Connect Wallet",
-      description: "Miners submit their Solana wallet address to the pool.",
+      description: "Miners connect their Solana wallet address to the in the config of their mining device.",
     },
     {
       number: "02",
-      title: "Submit Shares",
-      description: "Point your mining device to our Stratum endpoint and start mining.",
+      title: "Connect to pool",
+      description: "Point your mining device to our pool IP Address and start contributing shares.",
     },
     {
       number: "03",
@@ -22,8 +22,8 @@ export default function HowItWorks() {
     },
     {
       number: "04",
-      title: "Instant Payout",
-      description: "Sats are distributed to miners based on their share contribution.",
+      title: "Claim Payout",
+      description: "Sats are distributed to miners based on their share contribution. Which can be claimed from the miner dashboard.",
     },
   ]
 

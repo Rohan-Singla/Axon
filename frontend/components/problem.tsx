@@ -13,7 +13,7 @@ export default function Problem() {
     {
       icon: TrendingDown,
       title: "Impossible for Small Miners",
-      description: "Devices like Bitaxe (1-8 TH/s) can't reach minimum thresholds, making pool mining impractical.",
+      description: "Small Devices like Bitaxe (1-8 TH/s) can't reach minimum thresholds, making pool mining impractical.",
     },
     {
       icon: AlertCircle,

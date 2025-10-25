@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion"
 import { Zap } from "lucide-react"
+import Link from "next/link"
 
 export default function Header() {
   return (
@@ -34,9 +35,9 @@ export default function Header() {
             Features
           </a>
         </nav>
-        <button className="px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition text-sm font-medium">
-          Launch App
-        </button>
+        <Link href="/miner" className="px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition text-sm font-medium">
+          Claim Payout
+        </Link>
       </div>
     </motion.header>
   )
