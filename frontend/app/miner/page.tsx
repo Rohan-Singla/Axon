@@ -10,10 +10,53 @@ import {
   WalletMultiButton,
   WalletDisconnectButton,
 } from "@solana/wallet-adapter-react-ui";
+import { Connection, Transaction } from "@solana/web3.js";
+import { useState } from "react";
 
 export default function MinerDashboard() {
-  const { publicKey, connected } = useWallet();
+  const { publicKey, connected, signTransaction } = useWallet();
+  const [loading, setLoading] = useState(false);
+  const connection = new Connection(`${process.env.NEXT_PUBLIC_SOLANA_RPC_URL}`, "confirmed");
 
+  async function handleClaim() {
+    if (!connected || !publicKey || !signTransaction) {
+      alert("Please connect your wallet first.");
+      return;
+    }
+  
+    try {
+      setLoading(true);
+  
+      const res = await fetch("/api/claim", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ claimer: publicKey.toBase58() }),
+      });
+  
+      const { tx, error } = await res.json();
+      if (error) throw new Error(error);
+  
+      const txBuffer = Buffer.from(tx, "base64");
+      const transaction = Transaction.from(txBuffer);
+  
+      const signedTx = await signTransaction(transaction);
+  
+      const sig = await connection.sendRawTransaction(signedTx.serialize(), {
+        skipPreflight: false,
+        preflightCommitment: "confirmed",
+      });
+  
+      await connection.confirmTransaction(sig, "confirmed");
+  
+      alert(`✅ Claimed successfully!\nSignature: ${sig}`);
+    } catch (err) {
+      console.error("Claim failed:", err);
+      alert("❌ Claim failed. Check console.");
+    } finally {
+      setLoading(false);
+    }
+  }
+  
   return (
     <main className="min-h-screen bg-background">
       <Header />
@@ -142,7 +185,7 @@ export default function MinerDashboard() {
                     You have 0.32 zBTC available to claim. This will be
                     transferred to your connected wallet (which you used in the config of your mining device).
                   </p>
-                  <button className="px-8 py-3 bg-gradient-to-r from-primary to-accent text-primary-foreground rounded-lg font-semibold hover:shadow-lg hover:shadow-primary/50 transition-all duration-300 flex items-center gap-2 group mx-auto">
+                  <button onClick={()=>{handleClaim}} className="px-8 py-3 bg-gradient-to-r from-primary to-accent text-primary-foreground rounded-lg font-semibold hover:shadow-lg hover:shadow-primary/50 transition-all duration-300 flex items-center gap-2 group mx-auto">
                     Claim zBTC Rewards
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition" />
                   </button>
