@@ -347,6 +347,8 @@ impl Sv1Server {
             .await
             .map_err(TproxyError::ChannelErrorReceiver)?;
 
+        // println!("downstream_message: {:?}", downstream_message);
+
         match downstream_message {
             DownstreamMessages::SubmitShares(message) => {
                 return self.handle_submit_shares(message).await;
