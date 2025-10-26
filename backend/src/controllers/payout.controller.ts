@@ -4,13 +4,13 @@ import { UserModel } from "../models/user.model";
 
 export const createPayout = async (req: Request, res: Response) => {
   try {
-    const { user_id, amount, tx_hash } = req.body;
+    const { wallet_address, amount } = req.body;
 
-    if (!user_id || amount == null || !tx_hash) {
+    if (!wallet_address || amount == null ) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
-    const user = await UserModel.getUserInfo(user_id);
+    const user = await UserModel.getByWallet(wallet_address);
     if (!user || !user.user_uuid) {
       return res.status(404).json({ error: "User not found or user_uuid missing" });
     }
@@ -20,9 +20,10 @@ export const createPayout = async (req: Request, res: Response) => {
     const paid_at = new Date().toISOString();
 
     await PayoutModel.insert({
-      miner_id: user.user_uuid, 
+      // miner_id: user.user_uuid, 
+      wallet_address,
       amount,
-      tx_hash,
+      // tx_hash,
       paid_at
     });
     

@@ -616,6 +616,8 @@ impl ParseMiningMessagesFromDownstream<()> for Downstream {
     ) -> Result<SendTo<()>, Error> {
         info!("Received: {}", m);
 
+        // println!("\n\nSubmit share m value: {:?}\n\n", m);
+
         let channel_id = m.channel_id;
         if !self.standard_channels.contains_key(&channel_id) {
             let submit_shares_error = SubmitSharesError {

@@ -554,8 +554,12 @@ impl<'a> ExtendedChannel<'a> {
             // update the best diff
             self.share_accounting.update_best_diff(hash_as_diff);
 
+            // println!("\n\n\nShare: {}, hash_target: {:?}, share.target: {:?}\n\n", share, hash_bytes, self.target);
+
             return Ok(ShareValidationResult::Valid);
         }
+
+        // println!("\n\n\nShare: {}, hash_target: {:?}, share.target: {:?}\n\n", share, hash_as_u256, target_u256);
 
         Err(ShareValidationError::DoesNotMeetTarget)
     }

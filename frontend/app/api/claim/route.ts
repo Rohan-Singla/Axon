@@ -11,15 +11,16 @@ import {
   createAssociatedTokenAccountInstruction,
 } from "@solana/spl-token";
 
-const connection = new Connection(`https://api.devnet.solana.com`, "confirmed");
+const connection = new Connection(`${process.env.TRITON_BACKEND_RPC}`, "confirmed");
 
-const ZBTC_MINT = new PublicKey(`$${process.env.TOKEN_MINT_ADDRESS}`);
+const ZBTC_MINT = new PublicKey(`${process.env.TOKEN_MINT_ADDRESS}`);
 const REWARD_AUTHORITY_PRIVATE_KEY = process.env.REWARD_WALLET_SECRET!;
 const rewardKeypair = Keypair.fromSecretKey(
   Uint8Array.from(JSON.parse(REWARD_AUTHORITY_PRIVATE_KEY))
 );
 
 export async function POST(req: Request) {
+  console.log("req received with publickey, ", req.json);
   try {
     const { claimer } = await req.json();
     if (!claimer) {
@@ -53,7 +54,7 @@ export async function POST(req: Request) {
       fromTokenAccount,
       toTokenAccount,
       rewardKeypair.publicKey,
-      0.32 * 10 ** 9 
+      100_000_000
     );
 
     tx.add(transferIx);

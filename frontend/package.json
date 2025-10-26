@@ -18,6 +18,7 @@
     "@solana/wallet-adapter-wallets": "^0.19.37",
     "@solana/web3.js": "^1.98.4",
     "@zeus-network/zeus-stack-sdk": "^0.11.9",
+    "axios": "^1.12.2",
     "bitcoinjs-lib": "^7.0.0",
     "bn.js": "^5.2.2",
     "class-variance-authority": "^0.7.1",
