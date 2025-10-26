@@ -12,23 +12,24 @@ import {
 } from "@solana/wallet-adapter-react-ui";
 import { Connection, Transaction } from "@solana/web3.js";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 export default function MinerDashboard() {
   const { publicKey, connected, signTransaction } = useWallet();
   const [loading, setLoading] = useState(false);
   const [isClient, setIsClient] = useState(false);
 
-  
+
   useEffect(() => {
     setIsClient(true);
   }, []);
-  const connection = new Connection(`https://api.devnet.solana.com`, "confirmed");
+  const connection = new Connection(`https://axon-solanad-78a4.devnet.rpcpool.com`, "confirmed");
   async function handleClaim() {
     if (!connected || !publicKey || !signTransaction) {
       alert("Please connect your wallet first.");
       return;
     }
-  
+
     try {
       setLoading(true);
       const res = await fetch("/api/claim", {
@@ -36,31 +37,33 @@ export default function MinerDashboard() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ claimer: publicKey.toBase58() }),
       });
-  
+
       const { tx, error } = await res.json();
       if (error) throw new Error(error);
-  
+
       const txBuffer = Buffer.from(tx, "base64");
       const transaction = Transaction.from(txBuffer);
-  
+
       const signedTx = await signTransaction(transaction);
-  
+
       const sig = await connection.sendRawTransaction(signedTx.serialize(), {
         skipPreflight: false,
         preflightCommitment: "confirmed",
       });
-  
+
       await connection.confirmTransaction(sig, "confirmed");
-  
-      alert(`✅ Claimed successfully!\nSignature: ${sig}`);
+
+      toast.success(`✅ Claimed successfully!\nSignature: ${sig}`);
+
     } catch (err) {
       console.error("Claim failed:", err);
-      alert("❌ Claim failed. Check console.");
+      toast.error(`❌ Claim failed. Check console.`);
+
     } finally {
       setLoading(false);
     }
   }
-  
+
   return (
     <main className="min-h-screen bg-background">
       <Header />
@@ -231,11 +234,10 @@ export default function MinerDashboard() {
                             </p>
                           </div>
                           <span
-                            className={`text-xs font-semibold px-3 py-1 rounded-full ${
-                              activity.status === "Completed"
+                            className={`text-xs font-semibold px-3 py-1 rounded-full ${activity.status === "Completed"
                                 ? "bg-accent/20 text-accent"
                                 : "bg-primary/20 text-primary"
-                            }`}
+                              }`}
                           >
                             {activity.status}
                           </span>
@@ -244,8 +246,8 @@ export default function MinerDashboard() {
                     </div>
                   </div>
                 </div>
-                ) 
-              ) : null
+              )
+            ) : null
             }
           </motion.div>
 

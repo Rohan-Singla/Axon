@@ -11,32 +11,55 @@ import {
   createAssociatedTokenAccountInstruction,
 } from "@solana/spl-token";
 
-const connection = new Connection(`${process.env.TRITON_BACKEND_RPC}`, "confirmed");
+export const dynamic = "force-dynamic";
 
-const ZBTC_MINT = new PublicKey(`${process.env.TOKEN_MINT_ADDRESS}`);
-const REWARD_AUTHORITY_PRIVATE_KEY = process.env.REWARD_WALLET_SECRET!;
-const rewardKeypair = Keypair.fromSecretKey(
-  Uint8Array.from(JSON.parse(REWARD_AUTHORITY_PRIVATE_KEY))
-);
+const connection = new Connection(process.env.TRITON_BACKEND_RPC || "", "confirmed");
+
+let rewardKeypair: Keypair | null = null;
+function getRewardKeypair() {
+  if (!rewardKeypair) {
+    const raw = process.env.REWARD_WALLET_SECRET;
+    if (!raw) throw new Error("Missing REWARD_WALLET_SECRET env var");
+    try {
+      rewardKeypair = Keypair.fromSecretKey(Uint8Array.from(JSON.parse(raw)));
+    } catch (err) {
+      console.error("❌ Failed to parse REWARD_WALLET_SECRET:", err);
+      throw new Error("Invalid REWARD_WALLET_SECRET format");
+    }
+  }
+  return rewardKeypair;
+}
+
+const ZBTC_MINT = new PublicKey(process.env.TOKEN_MINT_ADDRESS || "");
 
 export async function POST(req: Request) {
-  console.log("req received with publickey, ", req.json);
   try {
-    const { claimer } = await req.json();
+    let body;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+    }
+
+    const { claimer } = body;
     if (!claimer) {
       return NextResponse.json({ error: "Missing claimer address" }, { status: 400 });
     }
 
+    const rewardKeypair = getRewardKeypair();
     const claimerPubkey = new PublicKey(claimer);
 
     const fromTokenAccount = await getAssociatedTokenAddress(
       ZBTC_MINT,
       rewardKeypair.publicKey
     );
-    const toTokenAccount = await getAssociatedTokenAddress(ZBTC_MINT, claimerPubkey);
+
+    const toTokenAccount = await getAssociatedTokenAddress(
+      ZBTC_MINT,
+      claimerPubkey
+    );
 
     const toAccountInfo = await connection.getAccountInfo(toTokenAccount);
-
     const tx = new Transaction();
 
     if (!toAccountInfo) {
@@ -54,12 +77,13 @@ export async function POST(req: Request) {
       fromTokenAccount,
       toTokenAccount,
       rewardKeypair.publicKey,
-      100_000_000
+      100_000_000 
     );
 
     tx.add(transferIx);
 
-    tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+    const { blockhash } = await connection.getLatestBlockhash();
+    tx.recentBlockhash = blockhash;
     tx.feePayer = claimerPubkey;
 
     tx.partialSign(rewardKeypair);
@@ -68,7 +92,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ tx: serializedTx });
   } catch (err) {
-    console.error("Error building claim tx:", err);
-    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+    console.error("❌ Error in /api/claim:", err);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
