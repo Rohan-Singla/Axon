@@ -16,8 +16,7 @@ import { useState } from "react";
 export default function MinerDashboard() {
   const { publicKey, connected, signTransaction } = useWallet();
   const [loading, setLoading] = useState(false);
-  const connection = new Connection(`${process.env.NEXT_PUBLIC_SOLANA_RPC_URL}`, "confirmed");
-
+  const connection = new Connection(`https://api.devnet.solana.com`, "confirmed");
   async function handleClaim() {
     if (!connected || !publicKey || !signTransaction) {
       alert("Please connect your wallet first.");
@@ -26,7 +25,6 @@ export default function MinerDashboard() {
   
     try {
       setLoading(true);
-  
       const res = await fetch("/api/claim", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -185,7 +183,7 @@ export default function MinerDashboard() {
                     You have 0.32 zBTC available to claim. This will be
                     transferred to your connected wallet (which you used in the config of your mining device).
                   </p>
-                  <button onClick={()=>{handleClaim}} className="px-8 py-3 bg-gradient-to-r from-primary to-accent text-primary-foreground rounded-lg font-semibold hover:shadow-lg hover:shadow-primary/50 transition-all duration-300 flex items-center gap-2 group mx-auto">
+                  <button onClick={handleClaim} className="px-8 py-3 bg-gradient-to-r from-primary to-accent text-primary-foreground rounded-lg font-semibold hover:shadow-lg hover:shadow-primary/50 transition-all duration-300 flex items-center gap-2 group mx-auto hover:cursor-pointer">
                     Claim zBTC Rewards
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition" />
                   </button>

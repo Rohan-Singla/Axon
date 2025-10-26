@@ -5,6 +5,6 @@ const router : Router = express.Router();
 
 router.post('/', createPayout);
 
-router.get('/:miner_id', getPayoutsByMiner);
+router.get('/:wallet_address', getPayoutsByMiner);
 
 export default router;

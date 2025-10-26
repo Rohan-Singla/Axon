@@ -22,16 +22,16 @@ export default function Header() {
           </span>
         </div>
         <nav className="hidden md:flex items-center gap-8">
-          <a href="#problem" className="text-sm hover:text-primary transition">
+          <a href="/#problem" className="text-sm hover:text-primary transition">
             Problem
           </a>
-          <a href="#solution" className="text-sm hover:text-primary transition">
+          <a href="/#solution" className="text-sm hover:text-primary transition">
             Solution
           </a>
-          <a href="#how-it-works" className="text-sm hover:text-primary transition">
+          <a href="/#how-it-works" className="text-sm hover:text-primary transition">
             How It Works
           </a>
-          <a href="#features" className="text-sm hover:text-primary transition">
+          <a href="/#features" className="text-sm hover:text-primary transition">
             Features
           </a>
         </nav>

@@ -1377,6 +1377,7 @@ impl HandleMiningMessagesFromClientAsync for ChannelManager {
                 .send()
                 .await
             {
+                println!("\n\nReq failed.../n/n");
                 error!("\n\nFailed to post share data: {:?}\n\n", e);
                 // Optionally, you can return a custom error here:
                 // return Err(JDCError::Other(format!("Reqwest error: {}", e)));
