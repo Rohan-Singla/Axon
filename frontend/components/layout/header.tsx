@@ -22,18 +22,18 @@ export default function Header() {
           </span>
         </Link>
         <nav className="hidden md:flex items-center gap-8">
-          <a href="/#problem" className="text-sm hover:text-primary transition">
+          <Link href="/#problem" className="text-sm hover:text-primary transition">
             Problem
-          </a>
-          <a href="/#solution" className="text-sm hover:text-primary transition">
+          </Link>
+          <Link href="/#solution" className="text-sm hover:text-primary transition">
             Solution
-          </a>
-          <a href="/#how-it-works" className="text-sm hover:text-primary transition">
+          </Link>
+          <Link href="/#how-it-works" className="text-sm hover:text-primary transition">
             How It Works
-          </a>
-          <a href="/#features" className="text-sm hover:text-primary transition">
+          </Link>
+          <Link href="/#features" className="text-sm hover:text-primary transition">
             Features
-          </a>
+          </Link>
         </nav>
         <Link href="/miner" className="px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition text-sm font-medium">
           Claim Payout
