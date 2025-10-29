@@ -23,7 +23,9 @@ export default function MinerDashboard() {
   useEffect(() => {
     setIsClient(true);
   }, []);
-  const connection = new Connection(`https://axon-solanad-78a4.devnet.rpcpool.com`, "confirmed");
+  
+  const connection = new Connection(`https://api.devnet.solana.com`, "confirmed");
+  
   async function handleClaim() {
     if (!connected || !publicKey || !signTransaction) {
       alert("Please connect your wallet first.");
@@ -53,22 +55,7 @@ export default function MinerDashboard() {
 
       await connection.confirmTransaction(sig, "confirmed");
 
-      const explorerUrl = `https://solscan.io/tx/${sig}?cluster=devnet`;
-
-      toast.success(
-        <div className="flex flex-col gap-1">
-          <span className="font-semibold">✅ Claimed successfully!</span>
-          <a
-            href={explorerUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            // Using your app's 'accent' color for the link
-            className="text-sm text-accent hover:underline" 
-          >
-            Check transaction on Solscan
-          </a>
-        </div>
-      );
+      toast.success(`✅ Claimed successfully!\nSignature: ${sig}`);
 
     } catch (err) {
       console.error("Claim failed:", err);

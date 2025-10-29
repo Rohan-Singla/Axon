@@ -2,8 +2,9 @@
 
 import { motion } from "framer-motion"
 import { Play } from "lucide-react"
+import Image from "next/image"
 import { useState } from "react"
-
+import thumbnail from "../public/image.png"
 export default function DemoVideo() {
   const [isOpen, setIsOpen] = useState(false)
 
@@ -19,10 +20,11 @@ export default function DemoVideo() {
         >
           <h2 className="text-4xl sm:text-5xl font-bold mb-4">See It In Action</h2>
           <p className="text-lg text-muted-foreground">
-            Watch our demo to understand how Project Axon revolutionizes Bitcoin mining
+            Watch our Pitch Deck to understand how Project Axon revolutionizes Bitcoin mining
           </p>
         </motion.div>
 
+<a href="https://www.loom.com/share/6262cd3b06b94c3ea1485fa9037fb6ab"    target="_blank">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           whileInView={{ opacity: 1, scale: 1 }}
@@ -32,7 +34,7 @@ export default function DemoVideo() {
           onClick={() => setIsOpen(true)}
         >
           <div className="relative rounded-2xl overflow-hidden border border-border bg-background aspect-video flex items-center justify-center">
-            <img src="/bitcoin-mining-dashboard-interface.jpg" alt="Project Axon Demo" className="w-full h-full object-cover" />
+            <Image src={thumbnail} alt="Project Axon Demo" className="w-full h-full object-cover" />
             <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition-all duration-300 flex items-center justify-center">
               <motion.div
                 whileHover={{ scale: 1.1 }}
@@ -46,6 +48,8 @@ export default function DemoVideo() {
           {/* Glow effect */}
           <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-accent/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-10"></div>
         </motion.div>
+  
+</a>
 
         {/* Demo video link section */}
         <motion.div
@@ -55,23 +59,15 @@ export default function DemoVideo() {
           viewport={{ once: true }}
           className="mt-12 text-center"
         >
-          <p className="text-muted-foreground mb-4">Full demo video available on our community channels</p>
+          <p className="text-muted-foreground mb-4">Our Pitch Deck is available on Loom to watch.</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <a
-              href="https://youtube.com"
+              href="https://www.loom.com/share/6262cd3b06b94c3ea1485fa9037fb6ab"
               target="_blank"
               rel="noopener noreferrer"
               className="px-6 py-2 bg-primary/10 border border-primary/50 text-primary rounded-lg font-semibold hover:bg-primary/20 transition"
             >
-              Watch on YouTube
-            </a>
-            <a
-              href="https://twitter.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-6 py-2 bg-accent/10 border border-accent/50 text-accent rounded-lg font-semibold hover:bg-accent/20 transition"
-            >
-              View on Twitter
+              Watch on Loom
             </a>
           </div>
         </motion.div>
