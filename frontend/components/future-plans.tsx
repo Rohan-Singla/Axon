@@ -6,24 +6,24 @@ import { Zap, TrendingUp, Shield, Globe } from "lucide-react"
 const plans = [
   {
     icon: Zap,
-    title: "Implementing smart contracts for micropayments on Solana.",
-    description: "Implementing smart contracts for micropayments on Solana. To build a more secure and efficient system.",
+    title: "Mainnet Launch",
+    description: "Preparing Axon for public release and production deployment.",
   },
   {
     icon: TrendingUp,
-    title: "Multi-Chain Support",
-    description: "Bring Project Axon to Ethereum, Polygon, and other major blockchains",
-    timeline: "Q3 2025",
+    title: "Batch Transactions",
+    description: "Option for miners without SOL to receive payouts through managed batch transfers.",
+    timeline: "",
   },
   {
     icon: Shield,
-    title: "Advanced Security",
-    description: "Implement multi-sig wallets and enhanced security protocols for large pools",
+    title: "Miner Dashboard",
+    description: "Comprehensive stats, performance tracking, and payout history.",
   },
   {
     icon: Globe,
-    title: "Global Expansion",
-    description: "Launch regional mining pools optimized for different geographic locations",
+    title: "On-chain Smart Contracts",
+    description: "Transitioning micropayments from backend logic to Solana programs for full transparency.",
   },
 ]
 
@@ -63,7 +63,7 @@ export default function FuturePlans() {
                   <div className="flex-1">
                     <div className="flex items-center justify-between mb-2">
                       <h3 className="text-xl font-bold">{plan.title}</h3>
-                      <span className="text-xs font-semibold text-accent bg-accent/10 px-3 py-1 rounded-full">
+                      <span className="text-xs font-semibold text-accent px-3 py-1 rounded-full">
                         {plan.timeline}
                       </span>
                     </div>
