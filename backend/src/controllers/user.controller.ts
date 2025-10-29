@@ -56,3 +56,25 @@ export const createUser = async (req: Request, res: Response) => {
     res.status(500).json({ error: "Internal server error" });
   }
 };
+
+export const getUserByWallet = async (req: Request, res: Response) => {
+  try {
+    const { wallet_address } = req.params;
+
+    if (!wallet_address) {
+      return res.status(400).json({ error: "wallet_address is required" });
+    }
+
+    const user = await UserModel.getByWallet(wallet_address);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json(user);
+  } catch (error) {
+    console.error("Error fetching user by wallet:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
