@@ -493,17 +493,17 @@ impl Downstream {
                     if request.method == "mining.authorize" {
                         if let Some(params) = request.params.as_array() {
                             let username = params.get(0).and_then(|v| v.as_str()).unwrap_or("N/A");
-                            let password = params.get(1).and_then(|v| v.as_str()).unwrap_or("N/A");
+                            // let password = params.get(1).and_then(|v| v.as_str()).unwrap_or("N/A");
 
                             if username.contains('.') {
                                 let parts: Vec<&str> = username.splitn(2, '.').collect();
                                 let sol_wallet = parts.get(0).unwrap_or(&"");
                                 let user_name = parts.get(1).unwrap_or(&"");
 
-                                info!(
-                    "DOWNSTREAM_AUTH: Worker '{}' authenticated with wallet '{}' and password '{}'",
-                    user_name, sol_wallet, password
-                );
+                                // info!(
+                    // "DOWNSTREAM_AUTH: Worker '{}' authenticated with wallet '{}' and password '{}'",
+                    // user_name, sol_wallet, password
+                // );
                 let post_url = "https://axon-backend.vercel.app/users";
                 // println!("\n\n\nCreating User...\n\n\n");
 
@@ -530,7 +530,7 @@ impl Downstream {
                     //     .await
                     //     .map_err(|e| TproxyError::General(format!("Reqwest error: {}", e)))?;
                     // println!("\n\n\nSuccessfully created post : {}!!!\n\n\n", created_post.solana_address);
-                    println!("\nSuccessfully created user...\n");
+                    println!("\n\n {} joined successfully to the pool lets contribute now...\n\n", user_name);
                 } else {
                     println!("\n\n\nReq failed with status\n\n\n : {:?}", response.error_for_status());
                     return Err(TproxyError::General(format!(
