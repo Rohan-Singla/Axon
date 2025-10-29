@@ -10,6 +10,7 @@ import {
   createTransferInstruction,
   createAssociatedTokenAccountInstruction,
 } from "@solana/spl-token";
+import axios from "axios";
 
 export const dynamic = "force-dynamic";
 
@@ -73,19 +74,45 @@ export async function POST(req: Request) {
       );
     }
 
+    const backendUrl = process.env.TRITON_BACKEND_RPC;
+    if (!backendUrl) {
+      return NextResponse.json({ error: "Backend URL not configured" }, { status: 500 });
+    }
+
+   
+    const minerRes = await axios.get(`${backendUrl}/users/wallet/${claimer}`);
+    const miner_id = minerRes.data?.miner_id;
+    if (!miner_id) {
+      return NextResponse.json({ error: "Miner ID not found" }, { status: 404 });
+    }
+
+     
+    const contriRes = await axios.get(`${backendUrl}/shares/contributions/${miner_id}`);
+    const contribution = contriRes.data?.contribution ?? 0;
+
+   
+    const fromTokenAccInfo = await connection.getTokenAccountBalance(fromTokenAccount);
+    const balance = parseFloat(fromTokenAccInfo?.value?.amount ?? "0");
+
+   
+    const amount = contribution * balance;
+
+    if (amount <= 0) {
+      return NextResponse.json({ error: "No reward to distribute" }, { status: 400 });
+    }
+
+    
     const transferIx = createTransferInstruction(
       fromTokenAccount,
       toTokenAccount,
       rewardKeypair.publicKey,
-      100_000_000 
+      amount//10000
     );
-
     tx.add(transferIx);
 
     const { blockhash } = await connection.getLatestBlockhash();
     tx.recentBlockhash = blockhash;
     tx.feePayer = claimerPubkey;
-
     tx.partialSign(rewardKeypair);
 
     const serializedTx = tx.serialize({ requireAllSignatures: false }).toString("base64");
