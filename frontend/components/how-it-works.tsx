@@ -7,23 +7,23 @@ export default function HowItWorks() {
   const steps = [
     {
       number: "01",
-      title: "Connect Wallet",
-      description: "Miners connect their Solana wallet address to the in the config of their mining device.",
+      title: "Connect to pool",
+      description: "Point your mining device to our pool IP Address() with username with this format- sol_wallet.miner_name",
     },
     {
       number: "02",
-      title: "Connect to pool",
-      description: "Point your mining device to our pool IP Address and start contributing shares.",
+      title: "Pool Mines Block",
+      description: "Each Miner contribute their share to the pool, and pool pool finds a block and earns native BTC",
     },
     {
       number: "03",
-      title: "Pool Mines Block",
-      description: "When the pool finds a block, BTC is earned and bridged to zBTC.",
+      title: "Bridging",
+      description: "The native BTC is then bridged to zBTC and database gets updated",
     },
     {
       number: "04",
       title: "Claim Payout",
-      description: "Sats are distributed to miners based on their share contribution. Which can be claimed from the miner dashboard.",
+      description: "Miners come to his dashboard and connect with the same wallet and claim his earned zBTC instantly",
     },
   ]
 

@@ -13,7 +13,7 @@ import {
 
 export const dynamic = "force-dynamic";
 
-const connection = new Connection(process.env.TRITON_BACKEND_RPC || "", "confirmed");
+const connection = new Connection(process.env.TRITON_BACKEND_RPC || "https://api.devnet.solana.com", "confirmed");
 
 let rewardKeypair: Keypair | null = null;
 function getRewardKeypair() {

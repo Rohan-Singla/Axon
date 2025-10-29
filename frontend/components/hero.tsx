@@ -57,8 +57,8 @@ export default function Hero() {
 
         <motion.div className="mt-16 grid grid-cols-3 gap-8 text-center">
           <div>
-            <div className="text-3xl font-bold text-accent">0.00001</div>
-            <div className="text-sm text-muted-foreground">Min Contribtion Required (BTC)</div>
+            <div className="text-3xl font-bold text-accent">0</div>
+            <div className="text-sm text-muted-foreground">Min Threshold Payout</div>
           </div>
           <div>
             <div className="text-3xl font-bold text-primary">Instant</div>

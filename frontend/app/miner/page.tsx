@@ -53,7 +53,22 @@ export default function MinerDashboard() {
 
       await connection.confirmTransaction(sig, "confirmed");
 
-      toast.success(`✅ Claimed successfully!\nSignature: ${sig}`);
+      const explorerUrl = `https://solscan.io/tx/${sig}?cluster=devnet`;
+
+      toast.success(
+        <div className="flex flex-col gap-1">
+          <span className="font-semibold">✅ Claimed successfully!</span>
+          <a
+            href={explorerUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            // Using your app's 'accent' color for the link
+            className="text-sm text-accent hover:underline" 
+          >
+            Check transaction on Solscan
+          </a>
+        </div>
+      );
 
     } catch (err) {
       console.error("Claim failed:", err);
