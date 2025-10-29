@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import {  Poppins } from "next/font/google";
 import "./globals.css";
 import { SolanaProvider } from "@/components/providers/walletProvider";
+import { Toaster } from "sonner";
 
 const geistSans = Poppins({
   subsets: ["latin"],
@@ -23,6 +24,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.className} antialiased bg-background text-foreground`}
       >
+        <Toaster />
         <SolanaProvider>
           {children}
         </SolanaProvider>
