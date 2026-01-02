@@ -41,7 +41,7 @@ Meet the builders behind Axon — feel free to reach out!
 ---
 
 ## 🔗 Links
-- 🌐 **Website:** [axon-frontend-six.vercel.app](https://axon-frontend.vercel.app)  
+- 🌐 **Website:** [axon-frontend-six.vercel.app](https://axon-frontend-six.vercel.app/)  
 - 🐦 **X (Twitter):** [@AxonForMiners](https://x.com/axonForMiners/)  
 - 💬 **Telegram:** [@Axon](https://t.me/+Uy3xrN2rTA1hN2Nl)  
 
